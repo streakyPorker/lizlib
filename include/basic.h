@@ -5,10 +5,19 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <sys/time.h>
+#include <any>
+#include <cassert>
 #include <cstdint>
+#include <deque>
+#include <functional>
+#include <future>
+#include <iostream>
 #include <limits>
+#include <memory>
+#include <queue>
 #include <string>
-
+#include <thread>
+#include <utility>
 #include "const.h"
 
 #define FORMATTER_REGISTRY(T)                                \
@@ -24,14 +33,51 @@
   }
 
 namespace lizlib {
+// likely/unlikely are likely to clash with other symbols,so do not #define
+#if defined(__cplusplus)
+constexpr bool likely(bool expr) {
+  return __builtin_expect(expr, true);
+}
+constexpr bool unlikely(bool expr) {
+  return __builtin_expect(expr, false);
+}
+#else
+#define likely(x) __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
+#endif
+
+#define ifUnlikely(expr) if (unlikely((expr)))
+#define ifLikely(expr) if (likely((expr)))
+
+#define EscapableMem(ptr, size)                        \
+  std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
+  if (size <= kStackAllocMaximum) { /*on stack*/       \
+    ptr = static_cast<decltype(ptr)>(::alloca(size));  \
+  } else { /*on heap*/                                 \
+    ptr = static_cast<decltype(ptr)>(::malloc(size));  \
+    __cleaner##ptr.reset((char*)ptr);                  \
+  }
+
+inline char* ceil_page_align_addr(void* ptr) {
+  return reinterpret_cast<char*>(((uint64_t)ptr + kPageSize) &
+                                 (~(kPageSize - 1)));
+}
+
+inline char* floor_page_align_addr(void* ptr) {
+  return reinterpret_cast<char*>((uint64_t)ptr & (~(kPageSize - 1)));
+}
 
 struct MallocDeleter {
   void operator()(void* ptr) { free(ptr); }
+};
+struct DummyDeleter {
+  void operator()(void* ptr) {}
 };
 
 template <typename T>
 struct Comparable {
   inline friend bool operator<(const T& p, const T& q) noexcept {
+
     return T::Compare(p, q) < 0;
   }
   friend bool operator<=(const T& p, const T& q) noexcept {

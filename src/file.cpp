@@ -13,66 +13,42 @@ lizlib::Status lizlib::File::Close() noexcept {
   }
   return Status::Invalid();
 }
-int64_t lizlib::File::Readv(const lizlib::Slice* bufs, size_t n) const {
+ssize_t lizlib::File::Readv(const lizlib::Slice* bufs, size_t n) const {
   struct iovec* blocks;
-  std::unique_ptr<struct iovec, MallocDeleter> cleaner;
-
-  if (n * sizeof(struct iovec) <= kStackAllocMaximum) {
-    blocks = static_cast<iovec*>(alloca(sizeof(struct iovec) * n));
-  } else {
-    // use malloc to enable customized allocator like jemalloc
-    blocks = static_cast<iovec*>(malloc(sizeof(struct iovec) * n));
-    cleaner.reset(blocks);
-  }
+  EscapableMem(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
-    blocks[i].iov_base = bufs[i].data_;
-    blocks[i].iov_len = bufs[i].length_;
+    blocks[i].iov_base = bufs[i].Data();
+    blocks[i].iov_len = bufs[i].Length();
   }
   return ::readv(fd_, blocks, n);
 }
-int64_t lizlib::File::Preadv(const lizlib::Slice* bufs, size_t n,
+ssize_t lizlib::File::Preadv(const lizlib::Slice* bufs, size_t n,
                              uint64_t offset, int flags) const {
   struct iovec* blocks;
-  std::unique_ptr<struct iovec, MallocDeleter> cleaner;
-
-  if (n * sizeof(struct iovec) <= kStackAllocMaximum) {
-    blocks = static_cast<iovec*>(alloca(sizeof(struct iovec) * n));
-  } else {
-    // use malloc to enable customized allocator like jemalloc
-    blocks = static_cast<iovec*>(malloc(sizeof(struct iovec) * n));
-    cleaner.reset(blocks);
-  }
+  EscapableMem(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
-    blocks[i].iov_base = bufs[i].data_;
-    blocks[i].iov_len = bufs[i].length_;
+    blocks[i].iov_base = bufs[i].Data();
+    blocks[i].iov_len = bufs[i].Length();
   }
-  ::preadv64v2(fd_, blocks, n, offset, flags);
+  return ::preadv64v2(fd_, blocks, n, offset, flags);
 }
 
-int64_t lizlib::File::Writev(lizlib::Slice* buf, size_t n) {
+ssize_t lizlib::File::Writev(lizlib::Slice* buf, size_t n) {
   struct iovec* blocks;
-  std::unique_ptr<struct iovec, MallocDeleter> cleaner;
-
-  if (n * sizeof(struct iovec) <= kStackAllocMaximum) {
-    blocks = static_cast<iovec*>(alloca(sizeof(struct iovec) * n));
-  } else {
-    // use malloc to enable customized allocator like jemalloc
-    blocks = static_cast<iovec*>(malloc(sizeof(struct iovec) * n));
-    cleaner.reset(blocks);
-  }
+  EscapableMem(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
-    blocks[i].iov_base = buf[i].data_;
-    blocks[i].iov_len = buf[i].length_;
+    blocks[i].iov_base = buf[i].Data();
+    blocks[i].iov_len = buf[i].Length();
   }
   return ::writev(fd_, blocks, n);
 }
-int64_t lizlib::File::Seek(uint64_t offset, lizlib::File::SeekMode mode) const {
-  return static_cast<int64_t>(::lseek64(fd_, offset, mode));
+ssize_t lizlib::File::Seek(uint64_t offset, lizlib::File::SeekMode mode) const {
+  return static_cast<ssize_t>(::lseek64(fd_, offset, mode));
 }
-int64_t lizlib::File::Size() const {
+ssize_t lizlib::File::Size() const {
   auto cur = Seek(0, SEEK_CUR);  //  check
   if (cur < 0) {
     return cur;
@@ -87,34 +63,29 @@ int64_t lizlib::File::Size() const {
 lizlib::Status lizlib::File::Sync() const noexcept {
   return Status::FromRet(::syncfs(fd_));
 }
-int64_t lizlib::File::Pread(void* buf, size_t n, uint64_t offset) const {
+ssize_t lizlib::File::Pread(void* buf, size_t n, uint64_t offset) const {
   return ::pread64(fd_, buf, n, offset);
 }
-int64_t lizlib::File::Pwrite(const void* buf, size_t n, uint64_t offset) {
+ssize_t lizlib::File::Pwrite(const void* buf, size_t n, uint64_t offset) {
   return ::pwrite64(fd_, buf, n, offset);
 }
-int64_t lizlib::File::Pwritev(lizlib::Slice* bufs, size_t n, uint64_t offset,
+ssize_t lizlib::File::Pwritev(lizlib::Slice* bufs, size_t n, uint64_t offset,
                               int flags) {
   struct iovec* blocks;
-  std::unique_ptr<struct iovec, MallocDeleter> cleaner;
-
-  if (n * sizeof(struct iovec) <= kStackAllocMaximum) {
-    blocks = static_cast<iovec*>(alloca(sizeof(struct iovec) * n));
-  } else {
-    // use malloc to enable customized allocator like jemalloc
-    blocks = static_cast<iovec*>(malloc(sizeof(struct iovec) * n));
-    cleaner.reset(blocks);
-  }
+  EscapableMem(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
-    blocks[i].iov_base = bufs[i].data_;
-    blocks[i].iov_len = bufs[i].length_;
+    blocks[i].iov_base = bufs[i].Data();
+    blocks[i].iov_len = bufs[i].Length();
   }
-  ::pwritev64v2(fd_, blocks, n, offset, flags);
+  return ::pwritev64v2(fd_, blocks, n, offset, flags);
 }
 size_t lizlib::File::Write(const void* buf, size_t size) noexcept {
   return ::write(fd_, buf, size);
 }
 lizlib::Status lizlib::File::Remove(const char* name) {
   return Status::FromRet(::remove(name));
+}
+ssize_t lizlib::File::Truncate(ssize_t new_size) {
+  return ::ftruncate64(fd_, new_size);
 }

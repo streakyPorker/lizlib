@@ -23,8 +23,10 @@ class Slice {
     mv.Clear();
   }
 
-  [[nodiscard]] inline void* Data() const { return data_; }
+  [[nodiscard]] inline char* Data() const { return data_; }
+  inline void Data(void* data) { data_ = static_cast<char*>(data); }
   [[nodiscard]] inline size_t Length() const { return length_; }
+  inline void Length(ssize_t length) { length_ = length; }
 
   virtual ~Slice() = default;
 

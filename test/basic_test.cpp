@@ -13,3 +13,11 @@ TEST(BasicTest, basicTest1) {
 TEST(BasicTest, logTest) {
   LOG_INFO("{} {} {} {} {}", "testing", 2, 3, 4, 5);
 }
+
+TEST(BasicTest, stackAllocTest) {
+  int val = 1;
+  fmt::println("{}", (void*)&val);
+  int *intptr1 = nullptr, *intptr2 = nullptr;
+  EscapableMem(intptr1, 100);
+  EscapableMem(intptr2, 100000);
+}

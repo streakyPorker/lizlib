@@ -16,10 +16,15 @@ class File {
  public:
   using SeekMode = int;
 
+  File(const File& file) = delete;
+
+  // only move ctor allowed
   File(File&& file) noexcept : fd_(file.fd_), flags_(file.flags_) {
     file.fd_ = -1;
     file.flags_ = 0;
   }
+
+  ~File() { Close(); }
 
   static File Open(const char* name, int32_t flags, int32_t createOp = 0) {
     auto file = File();
@@ -41,32 +46,38 @@ class File {
 
   Status Close() noexcept;
 
-  inline size_t Read(void* buf, size_t size) const noexcept {
+  inline ssize_t Read(void* buf, size_t size) const noexcept {
     return ::read(fd_, buf, size);
   }
 
-  int64_t Readv(const Slice* buf, size_t n) const;
+  ssize_t Readv(const Slice* buf, size_t n) const;
 
-  int64_t Pread(void* buf, size_t n, uint64_t offset) const;
+  ssize_t Pread(void* buf, size_t n, uint64_t offset) const;
 
-  int64_t Preadv(const Slice* bufs, size_t n, uint64_t offset,
+  ssize_t Preadv(const Slice* bufs, size_t n, uint64_t offset,
                  int flags = 0) const;
 
-  inline size_t Write(const void* buf, size_t size) noexcept;
+  size_t Write(const void* buf, size_t size) noexcept;
 
-  int64_t Writev(Slice* buf, size_t n);
+  ssize_t Writev(Slice* buf, size_t n);
 
-  int64_t Pwrite(const void* buf, size_t n, uint64_t offset);
+  ssize_t Pwrite(const void* buf, size_t n, uint64_t offset);
 
-  int64_t Pwritev(Slice* bufs, size_t n, uint64_t offset, int flags = 0);
+  ssize_t Pwritev(Slice* bufs, size_t n, uint64_t offset, int flags = 0);
 
   Status Sync() const noexcept;
 
-  int64_t Seek(uint64_t offset, SeekMode mode) const;
+  [[nodiscard]] ssize_t Cur() const { return Seek(0, SEEK_CUR); }
 
-  [[nodiscard]] int64_t Size() const;
+  ssize_t Seek(uint64_t offset, SeekMode mode) const;
 
-  inline std::string String() const { return fmt::format("{}", fd_); }
+  ssize_t Truncate(ssize_t new_size);
+
+  [[nodiscard]] ssize_t Size() const;
+
+  [[nodiscard]] inline std::string String() const {
+    return fmt::format("{}", fd_);
+  }
 
  protected:
   int fd_{-1};
