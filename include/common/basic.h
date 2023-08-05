@@ -32,6 +32,20 @@
     };                                                       \
   }
 
+#define DISABLE_MOVE(T)     \
+  T(T&&) noexcept = delete; \
+  T& operator=(T&&) noexcept = delete
+
+#define DISABLE_COPY(T)               \
+  T(const T&) noexcept = delete;      \
+  T(T&) noexcept = delete;            \
+  T& operator=(T&) noexcept = delete; \
+  T& operator=(const T&) noexcept = delete
+
+#define DISABLE_COPY_AND_MOVE(T) \
+  DISABLE_COPY(T);                \
+  DISABLE_MOVE(T);
+
 namespace lizlib {
 // likely/unlikely are likely to clash with other symbols,so do not #define
 #if defined(__cplusplus)

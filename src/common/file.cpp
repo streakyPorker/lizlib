@@ -1,6 +1,6 @@
 
 
-#include "file.h"
+#include "common/file.h"
 lizlib::Status lizlib::File::Close() noexcept {
 
   if (Valid()) {
@@ -88,4 +88,15 @@ lizlib::Status lizlib::File::Remove(const char* name) {
 }
 ssize_t lizlib::File::Truncate(ssize_t new_size) {
   return ::ftruncate64(fd_, new_size);
+}
+lizlib::File lizlib::File::Open(const char* name, int32_t flags,
+                                int32_t createOp) {
+  auto file = File();
+  file.flags_ = flags;
+  if ((flags & O_CREAT) != 0) {
+    file.fd_ = open(name, file.flags_, createOp);
+  } else {
+    file.fd_ = ::open(name, file.flags_);
+  }
+  return file;
 }

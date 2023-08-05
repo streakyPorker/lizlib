@@ -98,3 +98,5 @@ gen
 /cmake-build-*
 .vscode
 /build*
+
+software-prep

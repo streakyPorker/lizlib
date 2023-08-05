@@ -16,7 +16,7 @@ class File {
  public:
   using SeekMode = int;
 
-  File(const File& file) = delete;
+  DISABLE_COPY(File);
 
   // only move ctor allowed
   File(File&& file) noexcept : fd_(file.fd_), flags_(file.flags_) {
@@ -26,16 +26,7 @@ class File {
 
   ~File() { Close(); }
 
-  static File Open(const char* name, int32_t flags, int32_t createOp = 0) {
-    auto file = File();
-    file.flags_ = flags;
-    if ((flags & O_CREAT) != 0) {
-      file.fd_ = open(name, file.flags_, createOp);
-    } else {
-      file.fd_ = ::open(name, file.flags_);
-    }
-    return file;
-  }
+  static File Open(const char* name, int32_t flags, int32_t createOp = 0);
 
   static Status Remove(const char* name);
 

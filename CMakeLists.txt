@@ -11,6 +11,10 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 
+#use io_uring to handle io event
+include(cmakes/liburing.cmake)
+
+
 include_directories(include)
 
 

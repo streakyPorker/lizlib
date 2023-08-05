@@ -1,6 +1,6 @@
 
 
-#include "buffer.h"
+#include "common/buffer.h"
 #include <cassert>
 void lizlib::Buffer::Clear() {
   Slice::Clear();

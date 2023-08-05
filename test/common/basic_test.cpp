@@ -1,7 +1,7 @@
 
-#include "basic.h"
+#include "common/basic.h"
+#include "common/logger.h"
 #include "gtest/gtest.h"
-#include "logger.h"
 using namespace lizlib;
 
 TEST(BasicTest, basicTest1) {
