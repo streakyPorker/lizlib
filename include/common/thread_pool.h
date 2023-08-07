@@ -12,9 +12,9 @@ using Runnable = std::function<void()>;
 
 class ThreadPool {
  public:
-  DISABLE_COPY_AND_MOVE(ThreadPool)
+  DISABLE_COPY_AND_MOVE(ThreadPool);
 
-  ThreadPool() : ThreadPool(1) {}
+  ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) {}
 
   explicit ThreadPool(uint32_t core_thread, bool start = true);
   ~ThreadPool() { Stop(); }
@@ -26,16 +26,10 @@ class ThreadPool {
     auto task = std::make_shared<std::packaged_task<ReturnType()>>(
       std::bind(std::forward<Func>(func), std::forward<Args>(args)...));
     std::future<ReturnType> result = task->get_future();
-    {
-      std::lock_guard<std::mutex> guard{global_lock_};
-      tasks_.push_back([task]() { (*task)(); });
-    }
+    enqueueTask([task]() { (*task)(); });
     return result;
   }
-  void Submit(const std::function<void()>& runnable) {
-    std::lock_guard<std::mutex> guard{global_lock_};
-    tasks_.push_back(runnable);
-  }
+  void Submit(const std::function<void()>& runnable);
 
   void Start();
 
@@ -51,15 +45,25 @@ class ThreadPool {
     Worker& operator=(Worker&& worker) noexcept {
       assert(id == worker.id);
       thread.swap(worker.thread);
+      return *this;
     }
   };
+
+  void enqueueTask(const std::function<void()>& runnable) {
+    std::lock_guard<std::mutex> guard{global_lock_};
+    tasks_.push_back(runnable);
+    if (tasks_.size() == 1) {
+      task_queue_cv_.notify_one();
+    }
+  }
 
   void coreWorkerRoutine(Worker* worker);
 
   uint32_t coreThreads_{1};
   std::deque<std::function<void()>> tasks_;
   std::mutex global_lock_;
-  std::condition_variable core_cv_;
+  std::condition_variable task_queue_cv_;
+  std::mutex task_queue_mutex_;
   std::deque<Worker> workers_;
   std::atomic_bool cancel_signal_{false};
   std::atomic_bool started_{false};

@@ -4,7 +4,7 @@
 
 #include "common/thread_pool.h"
 lizlib::ThreadPool::ThreadPool(uint32_t core_thread, bool start)
-  : coreThreads_(core_thread), started_(start) {
+    : coreThreads_(core_thread), started_(start) {
 
   for (int i = 0; i < core_thread; i++) {
     workers_.emplace_back(i);
@@ -26,17 +26,20 @@ void lizlib::ThreadPool::Start() {
   }
 }
 void lizlib::ThreadPool::Stop() {
-  if (started_) {
-    started_ = false;
-    cancel_signal_ = true;
+  if (started_.load(std::memory_order_relaxed)) {
+    started_.store(false, std::memory_order_release);
+    cancel_signal_.store(true, std::memory_order_release);
+    task_queue_cv_.notify_all();
     for (Worker& worker : workers_) {
-      worker.thread->join();
+      if (worker.thread->joinable()) {
+        worker.thread->join();
+      }
     }
     LOG_TRACE("thread_pool({}) stopped", coreThreads_);
   }
 }
 void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
-  while (!cancel_signal_) {
+  while (!cancel_signal_.load(std::memory_order_relaxed)) {
     Runnable job = nullptr;
     {
       std::lock_guard<std::mutex> guard{global_lock_};
@@ -47,6 +50,13 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
     }
     if (job) {
       job();
+    } else {
+      std::unique_lock<std::mutex> waiter{task_queue_mutex_};
+      task_queue_cv_.wait(waiter);
     }
   }
+}
+void lizlib::ThreadPool::Submit(const std::function<void()>& runnable) {
+  std::lock_guard<std::mutex> guard{global_lock_};
+  enqueueTask(runnable);
 }

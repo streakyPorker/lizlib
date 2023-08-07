@@ -44,7 +44,7 @@
 
 #define DISABLE_COPY_AND_MOVE(T) \
   DISABLE_COPY(T);                \
-  DISABLE_MOVE(T);
+  DISABLE_MOVE(T)
 
 namespace lizlib {
 // likely/unlikely are likely to clash with other symbols,so do not #define

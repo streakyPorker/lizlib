@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 project(lizlib VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 include(CheckIncludeFile)
@@ -11,17 +11,15 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 
-#use io_uring to handle io event
-include(cmakes/liburing.cmake)
-
-
 include_directories(include)
 
 
 file(GLOB_RECURSE SRC_FILES src/*.cc src/*.cpp include/*.h)
 add_library(lizlib SHARED ${SRC_FILES})
 add_definitions(-DFMT_HEADER_ONLY)
-target_link_libraries(lizlib PUBLIC fmt pthread)
+# uring 必须要public
+
+target_link_libraries(lizlib PUBLIC fmt pthread uring)
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR BUILD_TESTS)

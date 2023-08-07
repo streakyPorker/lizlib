@@ -11,7 +11,7 @@ using namespace lizlib;
 
 TEST(ThreadPoolTest, tpt1) {
   using namespace std::chrono_literals;
-  ThreadPool pool{10, false};
+  ThreadPool pool{std::thread::hardware_concurrency(), false};
   for (int i = 0; i < 5; i++) {
     std::cout << "waiting " << i << std::endl;
     std::this_thread::sleep_for(1s);

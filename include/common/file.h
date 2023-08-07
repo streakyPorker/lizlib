@@ -32,6 +32,7 @@ class File {
 
   static File From(int fd) { return File(fd); }
 
+  [[nodiscard]] inline int Fd() const { return fd_; }
   [[nodiscard]] inline bool Valid() const { return fd_ == -1; }
   [[nodiscard]] inline bool Direct() const { return (flags_ & O_DIRECT) == 0; }
 

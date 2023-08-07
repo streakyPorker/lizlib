@@ -2,7 +2,6 @@
 
 #include "common/file.h"
 lizlib::Status lizlib::File::Close() noexcept {
-
   if (Valid()) {
     LOG_TRACE("{})(fd:{})::Close()", *this, fd_);
     auto rst = Status::FromRet(::close(fd_));
