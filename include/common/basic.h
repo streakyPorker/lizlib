@@ -8,6 +8,7 @@
 #include <any>
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <deque>
 #include <functional>
 #include <future>
