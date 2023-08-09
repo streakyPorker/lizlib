@@ -44,7 +44,7 @@
   T& operator=(const T&) noexcept = delete
 
 #define DISABLE_COPY_AND_MOVE(T) \
-  DISABLE_COPY(T);                \
+  DISABLE_COPY(T);               \
   DISABLE_MOVE(T)
 
 namespace lizlib {
@@ -113,9 +113,31 @@ struct Comparable {
 };
 
 struct Duration : Comparable<Duration> {
-  int64_t usecs{};
+  int64_t usecs{0};
   Duration() = delete;
+
+  template <typename Rep, typename Period>
+  Duration(std::chrono::duration<Rep, Period> other)
+      : usecs(std::chrono::duration_cast<std::chrono::microseconds>(other)
+                .count()) {}
+
   explicit Duration(int64_t usec_diff) : usecs(usec_diff) {}
+
+  static int Compare(const Duration& p, const Duration& q) noexcept {
+    return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
+  }
+  Duration& operator=(const Duration& other) noexcept {
+    usecs = other.usecs;
+    return *this;
+  }
+
+  [[nodiscard]] inline int64_t MicroSec() const noexcept { return usecs; };
+  [[nodiscard]] inline int64_t MicroSecPart() const noexcept {
+    return usecs % 1000L;
+  };
+  [[nodiscard]] inline int64_t MilliSec() const noexcept {
+    return usecs / 1000L;
+  };
 };
 
 struct Timestamp : public Comparable<Timestamp> {

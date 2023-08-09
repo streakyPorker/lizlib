@@ -29,7 +29,11 @@ class ThreadPool {
     enqueueTask([task]() { (*task)(); });
     return result;
   }
-  void Submit(const std::function<void()>& runnable);
+  void Submit(const Runnable& runnable);
+
+  void SubmitDelay(const Runnable& runnable, Duration delay) {
+    
+  }
 
   void Start();
 

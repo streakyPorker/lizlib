@@ -48,3 +48,11 @@ TEST(ThreadPoolTest, tpt2) {
   myThread.join();
   std::cout << "Main thread has finished." << std::endl;
 }
+
+TEST(ThreadPoolTest, testDelay) {
+  using namespace  std::chrono_literals;
+  ThreadPool threadPool{4};
+  threadPool.SubmitDelay([](){
+    fmt::println("here");
+  },1ms);
+}

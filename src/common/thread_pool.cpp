@@ -27,6 +27,7 @@ void lizlib::ThreadPool::Start() {
 }
 void lizlib::ThreadPool::Stop() {
   if (started_.load(std::memory_order_relaxed)) {
+    // ok even if executed multiple time
     started_.store(false, std::memory_order_release);
     cancel_signal_.store(true, std::memory_order_release);
     task_queue_cv_.notify_all();
@@ -58,5 +59,7 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
 }
 void lizlib::ThreadPool::Submit(const std::function<void()>& runnable) {
   std::lock_guard<std::mutex> guard{global_lock_};
+  using namespace std::chrono_literals;
+  SubmitDelay(runnable,1ms);
   enqueueTask(runnable);
 }
