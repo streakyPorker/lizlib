@@ -5,6 +5,8 @@
 #ifndef LIZLIB_EVENT_CHANNEL_H
 #define LIZLIB_EVENT_CHANNEL_H
 #include "channel.h"
+
+#include <utility>
 #include "common/basic.h"
 namespace lizlib {
 class EventChannel final : public Channel {
@@ -15,6 +17,13 @@ class EventChannel final : public Channel {
   const File& GetFile() override { return file_; }
   void HandleEvents(Events events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
+
+  inline void SetCallback(Callback callback) { callback_ = std::move(callback); }
+
+  /**
+   * to wake up an event channel, just write a byte to it
+   */
+  void WakeUp();
 
  private:
   File file_;

@@ -4,7 +4,7 @@
 
 #include "net/channel/event_channel.h"
 #include <sys/eventfd.h>
-
+using Tester = uint64_t;
 lizlib::File lizlib::EventChannel::createEventFile() {
   int fd = ::eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (fd <= 0) {
@@ -14,7 +14,7 @@ lizlib::File lizlib::EventChannel::createEventFile() {
 }
 void lizlib::EventChannel::HandleEvents(lizlib::Events events,
                                         lizlib::Timestamp now) {
-  uint64_t val;
+  Tester val;
 
   // validate file first
   if (file_.Read(&val, sizeof(val)) != sizeof(val)) {
@@ -27,4 +27,8 @@ void lizlib::EventChannel::HandleEvents(lizlib::Events events,
 }
 std::string lizlib::EventChannel::String() const {
   return fmt::format("EventChannel[fd={}]", file_.Fd());
+}
+void lizlib::EventChannel::WakeUp() {
+  Tester val = 1;
+  file_.Write(&val, sizeof(val));
 }
