@@ -68,8 +68,8 @@ class File {
 
   [[nodiscard]] ssize_t Size() const;
 
-  [[nodiscard]] inline std::string String() const {
-    return fmt::format("{}", fd_);
+  virtual [[nodiscard]] inline std::string String() const {
+      return fmt::format("{}", fd_);
   }
 
  protected:

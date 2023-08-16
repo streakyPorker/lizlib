@@ -4,7 +4,9 @@
 
 #include "net/channel/event_channel.h"
 #include <sys/eventfd.h>
+
 using Inner = uint64_t;
+
 lizlib::File lizlib::EventChannel::createEventFile(bool non_block, bool sync) {
   int eventfd_flags = EFD_CLOEXEC;
   if (non_block) {
@@ -19,6 +21,7 @@ lizlib::File lizlib::EventChannel::createEventFile(bool non_block, bool sync) {
   }
   return File{fd};
 }
+
 void lizlib::EventChannel::HandleEvents(lizlib::Events events,
                                         lizlib::Timestamp now) {
   Inner val;
@@ -33,9 +36,11 @@ void lizlib::EventChannel::HandleEvents(lizlib::Events events,
     callback_();
   }
 }
+
 std::string lizlib::EventChannel::String() const {
   return fmt::format("EventChannel[fd={}]", file_.Fd());
 }
+
 void lizlib::EventChannel::WakeUp() {
   Inner val = 1;
   file_.Write(&val, sizeof(val));
