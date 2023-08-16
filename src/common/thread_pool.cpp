@@ -30,7 +30,7 @@ void lizlib::ThreadPool::Stop() {
     // ok even if executed multiple time
     started_.store(false, std::memory_order_release);
     cancel_signal_.store(true, std::memory_order_release);
-    task_queue_cv_.notify_all();
+    wait_cv_.notify_all();
     for (Worker& worker : workers_) {
       if (worker.thread->joinable()) {
         worker.thread->join();
@@ -41,25 +41,36 @@ void lizlib::ThreadPool::Stop() {
 }
 void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
   while (!cancel_signal_.load(std::memory_order_relaxed)) {
-    Runnable job = nullptr;
+    Job cur_job;
     {
-      std::lock_guard<std::mutex> guard{global_lock_};
-      if (!tasks_.empty()) {
-        job = tasks_.front();
-        tasks_.pop_front();
+      std::lock_guard<std::mutex> guard{global_mutex_};
+      if (!active_queue_.empty()) {
+        cur_job = active_queue_.front();
+        active_queue_.pop_front();
       }
     }
-    if (job) {
-      job();
+    if (cur_job.func != nullptr) {
+      switch (cur_job.type) {
+        case NORMAL:
+          cur_job.func();
+          break;
+        case DELAY:
+          std::this_thread::sleep_for(cur_job.time.MicroSec());
+          cur_job.func();
+        case EVERY:
+          std::this_thread::sleep_for(cur_job.time.MicroSec());
+          cur_job.func();
+          std::lock_guard<std::mutex> guard{global_mutex_};
+          active_queue_.push_back(cur_job);
+          break;
+      }
     } else {
-      std::unique_lock<std::mutex> waiter{task_queue_mutex_};
-      task_queue_cv_.wait(waiter);
+      std::unique_lock<std::mutex> waiter{wait_mutex_};
+      wait_cv_.wait(waiter);
     }
   }
 }
 void lizlib::ThreadPool::Submit(const std::function<void()>& runnable) {
-  std::lock_guard<std::mutex> guard{global_lock_};
   using namespace std::chrono_literals;
-  SubmitDelay(runnable,1ms);
-  enqueueTask(runnable);
+  enqueueTask(runnable, NORMAL, 0ms);
 }

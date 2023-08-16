@@ -114,7 +114,7 @@ struct Comparable {
 
 struct Duration : Comparable<Duration> {
   int64_t usecs{0};
-  Duration() = delete;
+  Duration() = default;
 
   template <typename Rep, typename Period>
   Duration(std::chrono::duration<Rep, Period> other)
@@ -131,7 +131,10 @@ struct Duration : Comparable<Duration> {
     return *this;
   }
 
-  [[nodiscard]] inline int64_t MicroSec() const noexcept { return usecs; };
+
+  [[nodiscard]] inline std::chrono::microseconds MicroSec() const noexcept {
+    return std::chrono::microseconds(usecs);
+  };
   [[nodiscard]] inline int64_t MicroSecPart() const noexcept {
     return usecs % 1000L;
   };
