@@ -13,7 +13,7 @@ class Status {
   Status(const Status&) = default;
   explicit Status(int code) : code_(code) {}
 
-  static Status Success() { return Status{0}; }
+  inline static Status Success() { return Status{0}; }
   /**
    * give errno (if there is any) to code
    * @param ret
@@ -27,9 +27,9 @@ class Status {
     }
   }
 
-  static Status FromErr() { return Status{errno}; }
+  inline static Status FromErr() { return Status{errno}; }
 
-  static Status Invalid() { return Status{INT32_MIN}; }
+  inline static Status Invalid() { return Status{INT32_MIN}; }
 
   inline bool OK() const { return code_ == 0; }
   inline int32_t Code() const { return code_; }

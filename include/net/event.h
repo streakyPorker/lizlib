@@ -8,6 +8,7 @@
 #include "common/basic.h"
 
 namespace lizlib {
+
 class Events {
  public:
   Events(uint32_t events) : events_(events) {}

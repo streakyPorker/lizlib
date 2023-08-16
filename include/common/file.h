@@ -25,7 +25,7 @@ class File {
   }
 
   explicit File(int fd) : fd_(fd){};
-  ~File() { Close(); }
+  virtual ~File() { Close(); }
 
   static File Open(const char* name, int32_t flags, int32_t createOp = 0);
 

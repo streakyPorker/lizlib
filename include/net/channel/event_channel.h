@@ -9,8 +9,16 @@
 #include <utility>
 #include "common/basic.h"
 namespace lizlib {
+/**
+ * <p>
+ * eventfd tranfers a uint64 counter to represent that the event has happened
+ * </p>
+ *
+ */
 class EventChannel final : public Channel {
  public:
+  EventChannel(bool non_block, bool sync)
+      : Channel(), file_(createEventFile(non_block, sync)) {}
   EventChannel() : Channel(), file_(createEventFile()) {}
   ~EventChannel() override = default;
 
@@ -18,7 +26,9 @@ class EventChannel final : public Channel {
   void HandleEvents(Events events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
 
-  inline void SetCallback(Callback callback) { callback_ = std::move(callback); }
+  inline void SetCallback(Callback callback) {
+    callback_ = std::move(callback);
+  }
 
   /**
    * to wake up an event channel, just write a byte to it
@@ -30,7 +40,7 @@ class EventChannel final : public Channel {
   Callback callback_;
 
  private:
-  static File createEventFile();
+  static File createEventFile(bool non_block = true, bool sync = false);
 };
 }  // namespace lizlib
 
