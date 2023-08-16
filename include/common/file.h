@@ -24,6 +24,7 @@ class File {
     file.flags_ = 0;
   }
 
+  explicit File(int fd) : fd_(fd){};
   ~File() { Close(); }
 
   static File Open(const char* name, int32_t flags, int32_t createOp = 0);
@@ -77,7 +78,6 @@ class File {
 
  private:
   File() = default;
-  explicit File(int fd) : fd_(fd){};
 };
 }  // namespace lizlib
 

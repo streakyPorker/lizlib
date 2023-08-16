@@ -52,6 +52,7 @@ extern Level log_level;
       fmt::print("[ERROR] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
                  __LINE__);                                                    \
       fmt::println(__VA_ARGS__);                                               \
+      std::terminate();                                                                 \
     }                                                                          \
   } while (0);
 #endif

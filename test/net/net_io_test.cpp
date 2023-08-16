@@ -10,6 +10,7 @@
 #include "common/file.h"
 #include "common/logger.h"
 #include "gtest/gtest.h"
+
 using namespace lizlib;
 
 #define QUEUE_DEPTH 32

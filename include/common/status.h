@@ -23,17 +23,26 @@ class Status {
     if (ret == 0) {
       return Status::Success();
     } else {
-      return Status{errno};
+      return FromErr();
     }
   }
+
+  static Status FromErr() { return Status{errno}; }
+
   static Status Invalid() { return Status{INT32_MIN}; }
 
   inline bool OK() const { return code_ == 0; }
   inline int32_t Code() const { return code_; }
+  [[nodiscard]] std::string String() const {
+    return fmt::format("Error[code:{}, reason:{}]", code_, getReason());
+  }
 
  private:
+  [[nodiscard]] const char* getReason() const noexcept;
   int32_t code_{INT32_MIN};
 };
 }  // namespace lizlib
+
+FORMATTER_REGISTRY(lizlib::Status);
 
 #endif  //LIZLIB_STATUS_H
