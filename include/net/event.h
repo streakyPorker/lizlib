@@ -9,6 +9,9 @@
 
 namespace lizlib {
 
+/**
+ * base class of events
+ */
 class Events {
  public:
   Events(uint32_t events) : events_(events) {}
@@ -23,6 +26,22 @@ class Events {
     return *this;
   }
 
+  template <typename... Events>
+  bool OneOf(Events... events) const noexcept {
+    if ((Contains(events) || ...)) {
+      return true;
+    }
+    return false;
+  }
+
+  template <typename... Events>
+  bool AllOf(Events... events) const noexcept {
+    if ((Contains(events) && ...)) {
+      return true;
+    }
+    return false;
+  }
+
   [[nodiscard]] bool Contains(const Events& other) const noexcept {
     return events_ & other.events_;
   }
@@ -34,13 +53,18 @@ class Events {
     events_ |= other.events_;
     return *this;
   }
+  [[nodiscard]] virtual std::string String() const noexcept {
+    return fmt::format("events:{}", events_);
+  };
 
  private:
   uint32_t events_;
 };
 
 class ReceiveEvents final : public Events {
+
  public:
+  explicit ReceiveEvents(uint32_t events) : Events(events){};
   static const ReceiveEvents kHangUp;
   static const ReceiveEvents kInvalid;
   static const ReceiveEvents kError;
@@ -57,13 +81,14 @@ enum class SelectTrigger {
 
 class SelectEvents final : public Events {
  public:
+  explicit SelectEvents(uint32_t events) : Events(events){};
   static const SelectEvents kNoneEvent;
   static const SelectEvents kReadEvent;
   static const SelectEvents kWriteEvent;
 
   [[nodiscard]] SelectEvents Trigger(SelectTrigger trigger) const noexcept;
 
-  [[nodiscard]] std::string String() const noexcept {
+  [[nodiscard]] std::string String() const noexcept override {
     char buf[3]{};
     buf[0] = Contains(kReadEvent) ? 'r' : '-';
     buf[1] = Contains(kWriteEvent) ? 'w' : '-';
@@ -72,6 +97,6 @@ class SelectEvents final : public Events {
 };
 
 }  // namespace lizlib
-FORMATTER_REGISTRY(lizlib::SelectEvents);
+FORMATTER_REGISTRY(lizlib::Events);
 
 #endif  //LIZLIB_EVENT_H

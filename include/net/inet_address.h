@@ -44,7 +44,14 @@ class InetAddress {
     return fmt::format("InetAddress[{}:{}]", host_, Port());
   }
 
-  [[nodiscard]] Slice Data() const { return Slice{&impl_, sizeof(sockaddr)}; }
+
+  [[nodiscard]] sockaddr* Data() {
+    return reinterpret_cast<sockaddr*>(&impl_);
+  }
+  [[nodiscard]] const sockaddr* Data() const {
+    return reinterpret_cast<const sockaddr*>(&impl_);
+  }
+  [[nodiscard]] socklen_t Length() const { return sizeof(impl_); }
 
  private:
   /**

@@ -68,7 +68,7 @@ class File {
 
   [[nodiscard]] ssize_t Size() const;
 
-  virtual [[nodiscard]] inline std::string String() const {
+  [[nodiscard]] virtual std::string String() const {
       return fmt::format("{}", fd_);
   }
 

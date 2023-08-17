@@ -9,13 +9,13 @@ lizlib::InetAddress::InetAddress(const std::string &host, uint16_t port,
         : host_(host), ipv6_(ipv6) {
     if (ipv6) {
         impl_.in6.sin6_family = AF_INET6;
-        impl_.in6.sin6_port = htobe16(port);
+        impl_.in6.sin6_port = htons(port);
         if (::inet_pton(AF_INET6, host.c_str(), &impl_.in4.sin_addr) <= 0) {
             LOG_ERROR("wrong host format : {}", host.c_str());
         }
     } else {
         impl_.in4.sin_family = AF_INET;
-        impl_.in4.sin_port = htobe16(port);
+        impl_.in4.sin_port = htons(port);
         if (::inet_pton(AF_INET, host.c_str(), &impl_.in4.sin_addr) <= 0) {
             LOG_ERROR("wrong host format : {}", host.c_str());
         }
@@ -23,7 +23,7 @@ lizlib::InetAddress::InetAddress(const std::string &host, uint16_t port,
 }
 
 int lizlib::InetAddress::Port() const noexcept {
-    return htobe16(ipv6_ ? impl_.in6.sin6_port : impl_.in4.sin_port);
+    return htons(ipv6_ ? impl_.in6.sin6_port : impl_.in4.sin_port);
 }
 
 lizlib::InetAddress &lizlib::InetAddress::operator=(

@@ -6,10 +6,11 @@
 #define LIZLIB_CHANNEL_H
 #include "common/basic.h"
 #include "common/file.h"
+#include "net/callbacks.h"
 #include "net/event.h"
 
 namespace lizlib {
-using Callback = std::function<void()>;
+
 class Channel {
  public:
   virtual const File& GetFile() = 0;

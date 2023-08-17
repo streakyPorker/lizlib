@@ -6,14 +6,7 @@
 #include <fmt/format.h>
 
 namespace lizlib {
-enum class Level {
-  kTrace,
-  kDebug,
-  kInfo,
-  kWarn,
-  kError,
-  kDisable,
-};
+enum class Level { kTrace, kDebug, kInfo, kWarn, kError, kDisable };
 extern Level log_level;
 
 #ifdef USE_SPDLOG
@@ -52,10 +45,19 @@ extern Level log_level;
       fmt::print("[ERROR] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
                  __LINE__);                                                    \
       fmt::println(__VA_ARGS__);                                               \
-      std::terminate();                                                                 \
     }                                                                          \
   } while (0);
 #endif
+
+#define LOG_FATAL(...)                                                       \
+  do {                                                                       \
+    fmt::print("[FATAL] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
+               __LINE__);                                                    \
+    fmt::println(__VA_ARGS__);                                               \
+    std::terminate();                                                        \
+  } while (0);
+
+
 }  // namespace lizlib
 
 #endif  //LIZLIB_LOGGER_H
