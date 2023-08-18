@@ -69,7 +69,7 @@ class File {
   [[nodiscard]] ssize_t Size() const;
 
   [[nodiscard]] virtual std::string String() const {
-      return fmt::format("{}", fd_);
+    return fmt::format("{}", fd_);
   }
 
  protected:
