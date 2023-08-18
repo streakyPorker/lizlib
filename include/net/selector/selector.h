@@ -10,7 +10,7 @@
 namespace lizlib {
 
 struct SelectChannels {
-  Timestamp now;
+  Timestamp occur_ts;
   std::vector<Channel*> channels;
   std::vector<ReceiveEvents> events;
 };

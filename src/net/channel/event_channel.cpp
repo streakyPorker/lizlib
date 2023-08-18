@@ -22,7 +22,7 @@ lizlib::File lizlib::EventChannel::createEventFile(bool non_block, bool sync) {
   return File{fd};
 }
 
-void lizlib::EventChannel::HandleEvents(lizlib::Events events,
+void lizlib::EventChannel::HandleEvents(lizlib::ReceiveEvents events,
                                         lizlib::Timestamp now) {
   Inner val;
 

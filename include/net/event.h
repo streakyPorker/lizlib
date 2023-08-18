@@ -17,17 +17,20 @@ class Events {
   Events(uint32_t events) : events_(events) {}
   [[nodiscard]] uint32_t Value() const noexcept { return events_; }
 
-  Events& Add(Events other) noexcept {
+  Events& Add(const Events& other) noexcept {
     events_ |= other.events_;
     return *this;
   }
-  Events& Remove(Events other) noexcept {
+  Events& Remove(const Events& other) noexcept {
     events_ &= ~other.events_;
     return *this;
   }
 
+  [[nodiscard]] bool Contains(const Events& other) const noexcept {
+    return events_ & other.events_;
+  }
   template <typename... Events>
-  bool OneOf(Events... events) const noexcept {
+  bool ContainsAny(const Events&... events) const noexcept {
     if ((Contains(events) || ...)) {
       return true;
     }
@@ -35,16 +38,13 @@ class Events {
   }
 
   template <typename... Events>
-  bool AllOf(Events... events) const noexcept {
+  bool ContainsAll(const Events&... events) const noexcept {
     if ((Contains(events) && ...)) {
       return true;
     }
     return false;
   }
 
-  [[nodiscard]] bool Contains(const Events& other) const noexcept {
-    return events_ & other.events_;
-  }
   bool operator!=(const Events& other) const noexcept {
     return events_ != other.events_;
   }
@@ -65,8 +65,9 @@ class ReceiveEvents final : public Events {
 
  public:
   explicit ReceiveEvents(uint32_t events) : Events(events){};
+  ReceiveEvents() : Events(0){};
+
   static const ReceiveEvents kHangUp;
-  static const ReceiveEvents kInvalid;
   static const ReceiveEvents kError;
   static const ReceiveEvents kReadable;
   static const ReceiveEvents kPriorReadable;

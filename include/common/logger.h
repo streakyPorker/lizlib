@@ -21,6 +21,11 @@ extern Level log_level;
     }                                                                          \
   } while (0);
 
+#define ASSERT_TRACE(expr, ...) \
+  if (!(expr)) {                \
+    LOG_TRACE(__VA_ARGS__);     \
+  }
+
 #define LOG_DEBUG(...)                                                         \
   do {                                                                         \
     if (log_level <= Level::kDebug) {                                          \
@@ -30,6 +35,11 @@ extern Level log_level;
     }                                                                          \
   } while (0);
 
+#define ASSERT_DEBUG(expr, ...) \
+  if (!(expr)) {                \
+    LOG_DEBUG(__VA_ARGS__);     \
+  }
+
 #define LOG_INFO(...)                                                         \
   do {                                                                        \
     if (log_level <= Level::kInfo) {                                          \
@@ -38,6 +48,25 @@ extern Level log_level;
       fmt::println(__VA_ARGS__);                                              \
     }                                                                         \
   } while (0);
+
+#define ASSERT_INFO(expr, ...) \
+  if (!(expr)) {               \
+    LOG_INFO(__VA_ARGS__);     \
+  }
+
+#define LOG_WARN(...)                                                         \
+  do {                                                                        \
+    if (log_level <= Level::kWarn) {                                          \
+      fmt::print("[WARN] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
+                 __LINE__);                                                   \
+      fmt::println(__VA_ARGS__);                                              \
+    }                                                                         \
+  } while (0);
+
+#define ASSERT_WARN(expr, ...) \
+  if (!(expr)) {               \
+    LOG_WARN(__VA_ARGS__);     \
+  }
 
 #define LOG_ERROR(...)                                                         \
   do {                                                                         \
@@ -49,6 +78,11 @@ extern Level log_level;
   } while (0);
 #endif
 
+#define ASSERT_ERROR(expr, ...) \
+  if (!(expr)) {                \
+    LOG_ERROR(__VA_ARGS__);     \
+  }
+
 #define LOG_FATAL(...)                                                       \
   do {                                                                       \
     fmt::print("[FATAL] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
@@ -57,6 +91,10 @@ extern Level log_level;
     std::terminate();                                                        \
   } while (0);
 
+#define ASSERT_FATAL(expr, ...) \
+  if (!(expr)) {                \
+    LOG_FATAL(__VA_ARGS__);     \
+  }
 
 }  // namespace lizlib
 

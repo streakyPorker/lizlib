@@ -19,7 +19,7 @@
 #include <string>
 #include <thread>
 #include <utility>
-#include "const.h"
+#include "config.h"
 
 #define FORMATTER_REGISTRY(T)                                \
   template <>                                                \
@@ -50,19 +50,14 @@
 namespace lizlib {
 // likely/unlikely are likely to clash with other symbols,so do not #define
 #if defined(__cplusplus)
-constexpr bool likely(bool expr) {
-  return __builtin_expect(expr, true);
-}
-constexpr bool unlikely(bool expr) {
-  return __builtin_expect(expr, false);
-}
+#define ifUnlikely(expr) if (__builtin_expect((expr), false))
+#define ifLikely(expr) if (__builtin_expect((expr), true))
 #else
-#define likely(x) __builtin_expect((x), 1)
-#define unlikely(x) __builtin_expect((x), 0)
+#define ifUnlikely(expr) if (__builtin_expect((expr), 0))
+#define ifLikely(expr) if (__builtin_expect((expr), 1))
 #endif
 
-#define ifUnlikely(expr) if (unlikely((expr)))
-#define ifLikely(expr) if (likely((expr)))
+#define NON_EXPLICIT
 
 #define EscapableMem(ptr, size)                        \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
@@ -113,24 +108,32 @@ struct Comparable {
 };
 
 struct Duration : Comparable<Duration> {
-  int64_t usecs{0};
-  Duration() = default;
+  int64_t usecs{-1};
+  static Duration Invalid() { return Duration{}; }
 
   template <typename Rep, typename Period>
   Duration(std::chrono::duration<Rep, Period> other)
       : usecs(std::chrono::duration_cast<std::chrono::microseconds>(other)
                 .count()) {}
 
-  explicit Duration(int64_t usec_diff) : usecs(usec_diff) {}
+  explicit Duration(int64_t usecs_diff) : usecs(usecs_diff) {}
 
   static int Compare(const Duration& p, const Duration& q) noexcept {
     return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
   }
+
+  Duration(const Duration& other) = default;
   Duration& operator=(const Duration& other) noexcept {
     usecs = other.usecs;
     return *this;
   }
+  Duration(Duration&& other) noexcept { std::swap(usecs, other.usecs); };
+  Duration& operator=(Duration&& other) noexcept {
+    std::swap(usecs, other.usecs);
+    return *this;
+  }
 
+  [[nodiscard]] inline bool Valid() const noexcept { return usecs >= 0; }
 
   [[nodiscard]] inline std::chrono::microseconds MicroSec() const noexcept {
     return std::chrono::microseconds(usecs);
@@ -141,6 +144,9 @@ struct Duration : Comparable<Duration> {
   [[nodiscard]] inline int64_t MilliSec() const noexcept {
     return usecs / 1000L;
   };
+
+ private:
+  Duration() = default;
 };
 
 struct Timestamp : public Comparable<Timestamp> {
@@ -167,18 +173,21 @@ struct Timestamp : public Comparable<Timestamp> {
   }
 
   Duration operator-(const Timestamp& other) const noexcept {
+
     return Duration{usecs - other.usecs};
   }
 
   Timestamp operator+(const Duration& d) const noexcept {
+
     return Timestamp{usecs + d.usecs};
   }
 
   Timestamp operator-(const Duration& d) const noexcept {
+
     return Timestamp{usecs - d.usecs};
   }
 
-  std::string String() const noexcept {
+  [[nodiscard]] std::string String() const noexcept {
     time_t msecs = usecs / kUsecPerMsec;
     time_t tmp_usec = usecs % kUsecPerMsec;
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs),

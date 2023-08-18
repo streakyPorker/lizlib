@@ -29,35 +29,40 @@ class ThreadPool {
     auto task = std::make_shared<std::packaged_task<ReturnType()>>(
       std::bind(std::forward<Func>(func), std::forward<Args>(args)...));
     std::future<ReturnType> result = task->get_future();
-    enqueueTask([task]() { (*task)(); }, NORMAL, 0ms);
+    enqueueTask([task]() { (*task)(); }, Duration::Invalid(),
+                Duration::Invalid());
     return result;
   }
   void Submit(const Runnable& runnable);
 
-  void SubmitDelay(const Runnable& runnable, Duration delay) {
-    enqueueTask(runnable, DELAY, delay);
-  }
+  void SubmitDelay(const Runnable& runnable, Duration delay);
 
-  void SubmitEvery(const Runnable& runnable, Duration interval) {
-    enqueueTask(runnable, EVERY, interval);
-  }
+  void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval);
 
   void Start();
+
+  void Join();
 
   void Stop();
 
  private:
-  enum SchedType { NORMAL, DELAY, EVERY };
   struct Job {
     Runnable func{nullptr};
-    SchedType type{NORMAL};
-    Duration time{0};
+    Duration delay{-1};
+    Duration interval{-1};
     Job() = default;
-    Job(Runnable func, SchedType type, Duration time)
-        : func(std::move(func)), type(type), time(time) {}
-    Job(Job& job) = default;
-    Job(const Job& job) = default;
-
+    Job(Runnable func, Duration delay, Duration interval)
+        : func(std::move(func)),
+          delay(std::move(delay)),
+          interval(std::move(interval)) {}
+    DISABLE_COPY(Job);
+    Job(Job&& job) = default;
+    Job& operator=(Job&& job) noexcept {
+      func = std::move(job.func);
+      delay = std::move(job.delay);
+      interval = std::move(job.interval);
+      return *this;
+    }
   };
 
   struct Worker {
@@ -73,9 +78,9 @@ class ThreadPool {
     }
   };
 
-  void enqueueTask(const Runnable& work, SchedType type, Duration time) {
+  void enqueueTask(const Runnable& work, Duration delay, Duration interval) {
     std::lock_guard<std::mutex> guard{global_mutex_};
-    active_queue_.emplace_back(work, type, time);
+    active_queue_.emplace_back(work, delay, interval);
     if (active_queue_.size() == 1) {
       wait_cv_.notify_one();
     }

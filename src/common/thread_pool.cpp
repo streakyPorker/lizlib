@@ -31,11 +31,7 @@ void lizlib::ThreadPool::Stop() {
     started_.store(false, std::memory_order_release);
     cancel_signal_.store(true, std::memory_order_release);
     wait_cv_.notify_all();
-    for (Worker& worker : workers_) {
-      if (worker.thread->joinable()) {
-        worker.thread->join();
-      }
-    }
+    Join();
     LOG_TRACE("thread_pool({}) stopped", coreThreads_);
   }
 }
@@ -45,25 +41,23 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
     {
       std::lock_guard<std::mutex> guard{global_mutex_};
       if (!active_queue_.empty()) {
-        cur_job = active_queue_.front();
+        cur_job = std::move(active_queue_.front());
         active_queue_.pop_front();
       }
     }
     if (cur_job.func != nullptr) {
-      switch (cur_job.type) {
-        case NORMAL:
-          cur_job.func();
-          break;
-        case DELAY:
-          std::this_thread::sleep_for(cur_job.time.MicroSec());
-          cur_job.func();
-        case EVERY:
-          std::this_thread::sleep_for(cur_job.time.MicroSec());
-          cur_job.func();
-          std::lock_guard<std::mutex> guard{global_mutex_};
-          active_queue_.push_back(cur_job);
-          break;
+      if (cur_job.interval.Valid()) {  // every
+        std::this_thread::sleep_for(cur_job.interval.MicroSec());
+        cur_job.func();
+        std::lock_guard<std::mutex> guard{global_mutex_};
+        active_queue_.emplace_back(std::move(cur_job));
+      } else if (!cur_job.delay.Valid()) {  // delay
+        std::this_thread::sleep_for(cur_job.interval.MicroSec());
+        cur_job.func();
+      } else {
+        cur_job.func();
       }
+
     } else {
       std::unique_lock<std::mutex> waiter{wait_mutex_};
       wait_cv_.wait(waiter);
@@ -72,5 +66,22 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::ThreadPool::Worker* worker) {
 }
 void lizlib::ThreadPool::Submit(const std::function<void()>& runnable) {
   using namespace std::chrono_literals;
-  enqueueTask(runnable, NORMAL, 0ms);
+  enqueueTask(runnable, Duration::Invalid(), Duration::Invalid());
+}
+void lizlib::ThreadPool::Join() {
+  for (Worker& worker : workers_) {
+    // once joined/detached ,the std::thread would not be joinable
+    if (worker.thread->joinable()) {
+      worker.thread->join();
+    }
+  }
+}
+void lizlib::ThreadPool::SubmitDelay(const lizlib::Runnable& runnable,
+                                     lizlib::Duration delay) {
+  enqueueTask(runnable, delay, Duration::Invalid());
+}
+void lizlib::ThreadPool::SubmitEvery(const lizlib::Runnable& runnable,
+                                     lizlib::Duration delay,
+                                     lizlib::Duration interval) {
+  enqueueTask(runnable, delay, interval);
 }

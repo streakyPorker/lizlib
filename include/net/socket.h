@@ -9,10 +9,16 @@
 #include <netinet/tcp.h>
 #include "common/basic.h"
 #include "common/file.h"
+#include "config.h"
 #include "inet_address.h"
+#include "net/config.h"
 
 namespace lizlib {
 
+/**
+ * a <code>Socket</code> represents a handle of connection-based network
+ * protocol(namely TCP), it controls the data flow of the connection
+ */
 class Socket : public File {
  public:
   Socket() : Socket(-1) {}
@@ -38,10 +44,10 @@ class Socket : public File {
   void SetTcpNoDelay(bool on);
 
   void ApplyDefaultOption() {
-    SetReuseAddr(NetOption::reuse_addr);
-    SetReuseAddr(NetOption::reuse_addr);
-    SetKeepAlive(NetOption::keep_alive);
-    SetTcpNoDelay(NetOption::tcp_no_delay);
+    SetReuseAddr(kTcpOption.reuse_addr);
+    SetReusePort(kTcpOption.reuse_port);
+    SetKeepAlive(kTcpOption.keep_alive);
+    SetTcpNoDelay(kTcpOption.tcp_no_delay);
   }
 
   [[nodiscard]] InetAddress GetLocalAddress() const;

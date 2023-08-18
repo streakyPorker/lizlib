@@ -23,7 +23,7 @@ class EventChannel final : public Channel {
   ~EventChannel() override = default;
 
   const File& GetFile() override { return file_; }
-  void HandleEvents(Events events, Timestamp now) override;
+  void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
 
   inline void SetCallback(Callback callback) {

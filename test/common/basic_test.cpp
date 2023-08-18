@@ -2,6 +2,7 @@
 #include "common/basic.h"
 #include "common/logger.h"
 #include "gtest/gtest.h"
+#include "net/config.h"
 using namespace lizlib;
 
 TEST(BasicTest, basicTest1) {
@@ -12,6 +13,8 @@ TEST(BasicTest, basicTest1) {
 
 TEST(BasicTest, logTest) {
   LOG_INFO("{} {} {} {} {}", "testing", 2, 3, 4, 5);
+  ASSERT_TRACE(false, "{}", 1123);
+  ASSERT_TRACE(false, "{} {}", kTcpOption.reuse_port, kTcpOption.reuse_addr);
 }
 
 TEST(BasicTest, stackAllocTest) {

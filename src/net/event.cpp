@@ -7,18 +7,16 @@
 #include <sys/poll.h>
 
 namespace lizlib {
-const ReceiveEvents ReceiveEvents::kHangUp{POLLHUP};
-const ReceiveEvents ReceiveEvents::kInvalid{POLLNVAL};
-const ReceiveEvents ReceiveEvents::kError{POLLERR};
-const ReceiveEvents ReceiveEvents::kReadable{POLLIN};
-const ReceiveEvents ReceiveEvents::kPriorReadable{POLLPRI};
-const ReceiveEvents ReceiveEvents::kReadHangUp{POLLRDHUP};
-const ReceiveEvents ReceiveEvents::kWritable{POLLOUT};
-
+const ReceiveEvents ReceiveEvents::kHangUp{EPOLLHUP};
+const ReceiveEvents ReceiveEvents::kError{EPOLLERR};
+const ReceiveEvents ReceiveEvents::kReadable{EPOLLIN};
+const ReceiveEvents ReceiveEvents::kPriorReadable{EPOLLPRI};
+const ReceiveEvents ReceiveEvents::kReadHangUp{EPOLLRDHUP};
+const ReceiveEvents ReceiveEvents::kWritable{EPOLLOUT};
 
 const SelectEvents SelectEvents::kNoneEvent{0};
-const SelectEvents SelectEvents::kReadEvent{POLLIN | POLLPRI};
-const SelectEvents SelectEvents::kWriteEvent{POLLOUT};
+const SelectEvents SelectEvents::kReadEvent{EPOLLIN | EPOLLPRI};
+const SelectEvents SelectEvents::kWriteEvent{EPOLLOUT};
 
 SelectEvents SelectEvents::Trigger(SelectTrigger trigger) const noexcept {
   SelectEvents events = *this;
