@@ -7,7 +7,7 @@
 
 #include "channel.h"
 #include "net/selector/selector.h"
-#include "net/socket.h"
+#include "net/tcp/socket.h"
 namespace lizlib {
 class SocketChannel final : public Socket, Channel {
  public:

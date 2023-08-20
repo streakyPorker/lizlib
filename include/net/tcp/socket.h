@@ -9,9 +9,8 @@
 #include <netinet/tcp.h>
 #include "common/basic.h"
 #include "common/file.h"
-#include "config.h"
-#include "inet_address.h"
 #include "net/config.h"
+#include "net/inet_address.h"
 
 namespace lizlib {
 
