@@ -98,5 +98,6 @@ gen
 /cmake-build-*
 .vscode
 /build*
+/test/private
 
 software-prep

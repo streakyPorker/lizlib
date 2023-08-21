@@ -12,16 +12,26 @@ using namespace lizlib;
 TEST(ThreadPoolTest, tpt1) {
   using namespace std::chrono_literals;
   ThreadPool pool{std::thread::hardware_concurrency(), false};
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 3; i++) {
     std::cout << "waiting " << i << std::endl;
     std::this_thread::sleep_for(1s);
   }
   pool.Start();
   for (int i = 0; i < 100; i++) {
     pool.Submit(
-      [](void* val) {
+      [&i](void* val) {
         std::cout << "work is running..." << std::endl;
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(1s);
+      },
+      nullptr);
+  }
+  std::this_thread::sleep_for(5s);
+  for (int i = 10; i < 20; i++) {
+    pool.Submit(
+      [&i](void* val) {
+        const int ii = i;
+        std::cout << "work is running..." << std::endl;
+        std::this_thread::sleep_for(1s);
       },
       nullptr);
   }
@@ -50,9 +60,7 @@ TEST(ThreadPoolTest, tpt2) {
 }
 
 TEST(ThreadPoolTest, testDelay) {
-  using namespace  std::chrono_literals;
+  using namespace std::chrono_literals;
   ThreadPool threadPool{4};
-  threadPool.SubmitDelay([](){
-    fmt::println("here");
-  },1ms);
+  threadPool.SubmitDelay([]() { fmt::println("here"); }, 1ms);
 }

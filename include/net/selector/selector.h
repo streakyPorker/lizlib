@@ -22,6 +22,7 @@ class Selector {
   virtual void Remove(Channel* channel) = 0;
   virtual void Update(Channel* channel, SelectEvents events) = 0;
   virtual Status Wait(Duration timeout, SelectChannels* selected) = 0;
+  Selector() = default;
   virtual ~Selector() = default;
 };
 

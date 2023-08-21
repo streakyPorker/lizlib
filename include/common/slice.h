@@ -18,6 +18,9 @@ class Slice {
   Slice(const std::string& str)
       : data_(const_cast<char*>(str.data())), length_(str.size()) {}
 
+  Slice(const char* str)
+      : data_(const_cast<char*>(str)), length_(::strlen(str)) {}
+
   Slice(std::string&& str)
       : data_(const_cast<char*>(str.data())), length_(str.size()) {
     str.assign(nullptr);

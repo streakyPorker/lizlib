@@ -7,6 +7,7 @@ void lizlib::EpollSelector::Add(lizlib::Channel* channel,
                                 lizlib::SelectEvents events) {
   internalUpdate(channel, EPOLL_CTL_ADD, events);
 }
+
 void lizlib::EpollSelector::Remove(lizlib::Channel* channel) {
   internalUpdate(channel, EPOLL_CTL_DEL, SelectEvents::kNoneEvent);
 }

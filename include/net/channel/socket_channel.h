@@ -51,6 +51,7 @@ class SocketChannel final : public Socket, Channel {
   }
 
   const File& GetFile() override;
+
   /**
    * event process rules of socket channel:
    * <li>on one of readable/pri-readable/read-hangup, trigger read callback</li>
@@ -60,6 +61,7 @@ class SocketChannel final : public Socket, Channel {
    * the connection FOR GOOD, trigger close callback</li>
    */
   void HandleEvents(ReceiveEvents events, Timestamp now) final;
+
   [[nodiscard]] std::string String() const override;
 
  private:

@@ -21,11 +21,12 @@ lizlib::Socket lizlib::Socket::Create(int domain, bool nonblock, int protocol) {
     // non-blocking attr should be set explicitly
     socket_type |= SOCK_NONBLOCK;
   }
-  int fd = ::socket(domain, socket_type, IPPROTO_TCP);
+  int fd = ::socket(domain, socket_type, protocol);
   ifUnlikely(fd < 0) {
     LOG_ERROR("failed to call ::socket({}, {}, {}), reason[{}]", domain,
               socket_type, protocol, Status::FromErr());
   }
+  return Socket{fd};
 }
 
 lizlib::Status lizlib::Socket::Bind(const InetAddress& addr) {

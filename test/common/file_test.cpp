@@ -6,7 +6,7 @@
 
 using namespace lizlib;
 
-TEST(BasicTest, fileOpenTest) {
+TEST(File, fileOpenTest) {
   File file = File::Open("testfile.txt", O_CREAT | O_RDWR);
   file.Close();
 }

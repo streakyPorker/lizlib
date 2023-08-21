@@ -23,7 +23,6 @@ class File {
     file.fd_ = -1;
     file.flags_ = 0;
   }
-
   explicit File(int fd) : fd_(fd){};
   virtual ~File() { Close(); }
 
@@ -75,8 +74,6 @@ class File {
  protected:
   int fd_{-1};
   int flags_{0};
-
- private:
   File() = default;
 };
 }  // namespace lizlib

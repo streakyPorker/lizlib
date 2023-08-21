@@ -23,6 +23,5 @@ using ErrorCallback = std::function<void(const TcpConnectionPtr&, Status)>;
 using CloseCallback = std::function<void(const TcpConnectionPtr&)>;
 using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;
 
-
 }  // namespace lizlib
 #endif  //LIZLIB_CALLBACKS_H

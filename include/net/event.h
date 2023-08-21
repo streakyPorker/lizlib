@@ -5,6 +5,7 @@
 #ifndef LIZLIB_EVENT_H
 #define LIZLIB_EVENT_H
 
+#include <sys/epoll.h>
 #include "common/basic.h"
 
 namespace lizlib {
@@ -57,7 +58,7 @@ class Events {
     return fmt::format("events:{}", events_);
   };
 
- private:
+ protected:
   uint32_t events_;
 };
 
@@ -76,7 +77,7 @@ class ReceiveEvents final : public Events {
 };
 
 enum class SelectTrigger {
-  kLevel,
+  kHorizon,
   kEdge,
 };
 
@@ -87,7 +88,11 @@ class SelectEvents final : public Events {
   static const SelectEvents kReadEvent;
   static const SelectEvents kWriteEvent;
 
-  [[nodiscard]] SelectEvents Trigger(SelectTrigger trigger) const noexcept;
+  [[nodiscard]] SelectTrigger Trigger() const noexcept {
+    return (events_ & EPOLLET) == 0 ? SelectTrigger::kHorizon
+                                    : SelectTrigger::kEdge;
+  };
+  void Trigger(SelectTrigger trigger) noexcept;
 
   [[nodiscard]] std::string String() const noexcept override {
     char buf[3]{};
