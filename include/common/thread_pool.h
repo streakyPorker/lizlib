@@ -104,6 +104,7 @@ class ThreadPool : public Executor {
   std::deque<Job> active_queue_;
   std::mutex global_mu_;
   std::condition_variable wait_cv_;
+
   BlockableBarrier barrier_;
   std::deque<Worker> workers_;
   std::atomic_bool cancel_signal_{false};
