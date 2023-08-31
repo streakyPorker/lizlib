@@ -21,16 +21,15 @@
 #include <utility>
 #include "config.h"
 
-#define FORMATTER_REGISTRY(T)                                \
-  template <>                                                \
-  struct fmt::formatter<T> {                                 \
-    constexpr auto parse(format_parse_context& ctx)          \
-      -> format_parse_context::iterator {                    \
-      return ctx.end();                                      \
-    }                                                        \
-    auto format(const T& item, format_context& ctx) const {  \
-      return fmt::format_to(ctx.out(), "{}", item.String()); \
-    };                                                       \
+#define FORMATTER_REGISTRY(T)                                                           \
+  template <>                                                                           \
+  struct fmt::formatter<T> {                                                            \
+    constexpr auto parse(format_parse_context& ctx) -> format_parse_context::iterator { \
+      return ctx.end();                                                                 \
+    }                                                                                   \
+    auto format(const T& item, format_context& ctx) const {                             \
+      return fmt::format_to(ctx.out(), "{}", item.String());                            \
+    };                                                                                  \
   }
 
 #define DISABLE_MOVE(T)     \
@@ -47,8 +46,8 @@
   DISABLE_COPY(T);               \
   DISABLE_MOVE(T)
 
-namespace lizlib {
-// likely/unlikely are likely to clash with other symbols,so do not #define
+#define ValidFd(fd) ((fd) >= 0)
+
 #if defined(__cplusplus)
 #define ifUnlikely(expr) if (__builtin_expect((expr), false))
 #define ifLikely(expr) if (__builtin_expect((expr), true))
@@ -68,9 +67,9 @@ namespace lizlib {
     __cleaner##ptr.reset((char*)ptr);                  \
   }
 
+namespace lizlib {
 inline char* ceil_page_align_addr(void* ptr) {
-  return reinterpret_cast<char*>(((uint64_t)ptr + kPageSize) &
-                                 (~(kPageSize - 1)));
+  return reinterpret_cast<char*>(((uint64_t)ptr + kPageSize) & (~(kPageSize - 1)));
 }
 
 inline char* floor_page_align_addr(void* ptr) {
@@ -86,25 +85,12 @@ struct DummyDeleter {
 
 template <typename T>
 struct Comparable {
-  inline friend bool operator<(const T& p, const T& q) noexcept {
-
-    return T::Compare(p, q) < 0;
-  }
-  friend bool operator<=(const T& p, const T& q) noexcept {
-    return T::Compare(p, q) <= 0;
-  }
-  friend bool operator==(const T& p, const T& q) noexcept {
-    return T::Compare(p, q) == 0;
-  }
-  friend bool operator>=(const T& p, const T& q) noexcept {
-    return T::Compare(p, q) >= 0;
-  }
-  friend bool operator>(const T& p, const T& q) noexcept {
-    return T::Compare(p, q) > 0;
-  }
-  friend bool operator!=(const T& p, const T& q) noexcept {
-    return T::Compare(p, q) != 0;
-  }
+  inline friend bool operator<(const T& p, const T& q) noexcept { return T::Compare(p, q) < 0; }
+  friend bool operator<=(const T& p, const T& q) noexcept { return T::Compare(p, q) <= 0; }
+  friend bool operator==(const T& p, const T& q) noexcept { return T::Compare(p, q) == 0; }
+  friend bool operator>=(const T& p, const T& q) noexcept { return T::Compare(p, q) >= 0; }
+  friend bool operator>(const T& p, const T& q) noexcept { return T::Compare(p, q) > 0; }
+  friend bool operator!=(const T& p, const T& q) noexcept { return T::Compare(p, q) != 0; }
 };
 
 struct Duration : Comparable<Duration> {
@@ -113,8 +99,7 @@ struct Duration : Comparable<Duration> {
 
   template <typename Rep, typename Period>
   Duration(std::chrono::duration<Rep, Period> other)
-      : usecs(std::chrono::duration_cast<std::chrono::microseconds>(other)
-                .count()) {}
+      : usecs(std::chrono::duration_cast<std::chrono::microseconds>(other).count()) {}
 
   explicit Duration(int64_t usecs_diff) : usecs(usecs_diff) {}
 
@@ -138,12 +123,11 @@ struct Duration : Comparable<Duration> {
   [[nodiscard]] inline std::chrono::microseconds MicroSec() const noexcept {
     return std::chrono::microseconds(usecs);
   };
-  [[nodiscard]] inline int64_t MicroSecPart() const noexcept {
-    return usecs % 1000L;
-  };
-  [[nodiscard]] inline int64_t MilliSec() const noexcept {
-    return usecs / 1000L;
-  };
+  [[nodiscard]] inline int64_t MilliSec() const noexcept { return usecs / 1000L; };
+  [[nodiscard]] inline int64_t Sec() const noexcept { return usecs / 1000000L; };
+
+  [[nodiscard]] inline int64_t MicrosBelowMilli() const noexcept { return usecs % 1000L; };
+  [[nodiscard]] inline int64_t MicrosBelowSec() const noexcept { return usecs % 1000000L; };
 
  private:
   Duration() = default;
@@ -162,9 +146,7 @@ struct Timestamp : public Comparable<Timestamp> {
     return Timestamp{tv.tv_usec + tv.tv_sec * kUsecPerSec};
   };
 
-  static Timestamp Max() {
-    return Timestamp{std::numeric_limits<int64_t>::max()};
-  }
+  static Timestamp Max() { return Timestamp{std::numeric_limits<int64_t>::max()}; }
 
   static Timestamp Min() { return Timestamp{0}; }
 
@@ -177,21 +159,14 @@ struct Timestamp : public Comparable<Timestamp> {
     return Duration{usecs - other.usecs};
   }
 
-  Timestamp operator+(const Duration& d) const noexcept {
+  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs + d.usecs}; }
 
-    return Timestamp{usecs + d.usecs};
-  }
-
-  Timestamp operator-(const Duration& d) const noexcept {
-
-    return Timestamp{usecs - d.usecs};
-  }
+  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs - d.usecs}; }
 
   [[nodiscard]] std::string String() const noexcept {
     time_t msecs = usecs / kUsecPerMsec;
     time_t tmp_usec = usecs % kUsecPerMsec;
-    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs),
-                       tmp_usec);
+    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };
 

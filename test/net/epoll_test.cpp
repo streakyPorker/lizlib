@@ -22,7 +22,7 @@ using namespace lizlib;
 #define NUM_REQUESTS 5
 
 TEST(EPOLL_TEST, timefd_test) {
-  int timer_fd = ::timerfd_create(CLOCK_MONOTONIC, 0);
+  int timer_fd = ::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC|TFD_NONBLOCK);
 
   struct itimerspec timer_spec;
   timer_spec.it_value.tv_sec = 1;
@@ -50,9 +50,9 @@ TEST(EPOLL_TEST, timefd_test) {
     if (num_events > 0) {
       fmt::println("Timer expired! fd:{} events:{}", events[0].data.fd,
                    events[0].events);
-      std::cout.flush();
       char buf[10];
-      read(*(int*)events[0].data.ptr, buf, 10);
+      fmt::println("{} bytes read,{}",read(*(int*)events[0].data.ptr, buf, 10),*(long*)(buf));
+      std::cout.flush();
     } else {
       fmt::println("no fd avail {}", num_events);
     }

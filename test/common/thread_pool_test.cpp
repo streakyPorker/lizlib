@@ -17,25 +17,35 @@ TEST(ThreadPoolTest, tpt1) {
     std::this_thread::sleep_for(1s);
   }
   pool.Start();
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 20 * 20; i++) {
     pool.Submit(
       [&i](void* val) {
         std::cout << "work is running..." << std::endl;
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(200ms);
       },
       nullptr);
   }
   std::this_thread::sleep_for(5s);
-  for (int i = 10; i < 20; i++) {
-    pool.Submit(
-      [&i](void* val) {
-        const int ii = i;
+  pool.Stop();
+}
+
+TEST(ThreadPoolTest, test_delay) {
+  lizlib::log_level = lizlib::Level::kWarn;
+  using namespace std::chrono_literals;
+  ThreadPool pool{1, true};
+  for (int i = 0; i < 5; i++) {
+    pool.SubmitEvery(
+      []() {
         std::cout << "work is running..." << std::endl;
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(200ms);
       },
-      nullptr);
+      5s,1s);
   }
-  std::this_thread::sleep_for(5s);
+  for(int i=0;i<10;i++){
+    fmt::println("sleep 1s");
+    std::cout.flush();
+    std::this_thread::sleep_for(1s);
+  }
   pool.Stop();
 }
 
@@ -44,7 +54,7 @@ void myThreadFunction() {
   std::cout << "Thread is running..." << std::endl;
   // 假设线程执行一些耗时任务
   std::this_thread::sleep_for(std::chrono::seconds(5));
-  std::cout << "Thread has finished its task." << std::endl;
+  std::cout << "Thread has once its task." << std::endl;
 }
 
 TEST(ThreadPoolTest, tpt2) {
@@ -56,7 +66,7 @@ TEST(ThreadPoolTest, tpt2) {
 
   // 等待新线程结束
   myThread.join();
-  std::cout << "Main thread has finished." << std::endl;
+  std::cout << "Main thread has once." << std::endl;
 }
 
 TEST(ThreadPoolTest, testDelay) {
