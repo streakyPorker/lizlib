@@ -23,6 +23,7 @@ class EpollSelector final : public Selector {
 
   ~EpollSelector() override {
     ASSERT_FATAL(::close(fd_) == 0, "epoll selector failed to close : {}", Status::FromErr());
+    LOG_TRACE("EpollSelector closed");
   }
 
  private:

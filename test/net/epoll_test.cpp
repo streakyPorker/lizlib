@@ -72,11 +72,9 @@ TEST(EPOLL_TEST, time_channel_test) {
   }};
   SelectChannels select_channels;
   timer_scheduler.epoll_selector_.Add(&timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
-  timer_channel.SetTimer(1s, 1s);
-  for (int i = 0; i < 5; i++) {
-    timer_scheduler.epoll_selector_.Wait(10s, &select_channels);
-    select_channels.Process();
-  }
+  timer_channel.SetTimer(1s, 0.5s);
+  std::this_thread::sleep_for(10s);
+
   fmt::println("here");
   std::cout.flush();
   timer_scheduler.Join();

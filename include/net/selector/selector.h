@@ -20,6 +20,8 @@ struct SelectChannels {
     for (int i = 0; i < Size(); i++) {
       channels[i]->HandleEvents(events[i], occur_ts);
     }
+//    channels.clear();
+//    events.clear();
   }
 };
 

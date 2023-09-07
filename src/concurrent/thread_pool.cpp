@@ -52,8 +52,9 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::Worker* worker) {
     }
     if (cur_job != nullptr && cur_job->func != nullptr) {
       cur_job->func();
-      if (cur_job->once && cur_job->binder != nullptr && ValidFd(cur_job->binder->GetFile().Fd())) {
-        ::close(cur_job->binder->GetFile().Fd());
+      if (cur_job->once && cur_job->bind_channel != nullptr &&
+          ValidFd(cur_job->bind_channel->GetFile().Fd())) {
+        ::close(cur_job->bind_channel->GetFile().Fd());
         delete cur_job;
       }
     } else {
@@ -79,9 +80,9 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
 
   if (interval.Valid() || delay.Valid()) {
     int timer_fd = ::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
-    TimerChannel timer_channel{};
+
     Job* job = new Job{work, !interval.Valid(), &active_queue_, new TimerChannel};
-    job->binder->SetCallback([this, job]() {
+    job->bind_channel->SetCallback([this, job]() {
       {
         std::lock_guard<std::mutex> guard{global_mu_};
         // emplace front to achieve relative fairness
@@ -91,12 +92,13 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
         }
       }
       if (job->once) {
-        timer_scheduler_->epoll_selector_.Remove(job->binder);
+        timer_scheduler_->epoll_selector_.Remove(job->bind_channel);
       }
     });
 
-    timer_scheduler_->epoll_selector_.Add(&timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
-    timer_channel.SetTimer(delay, interval);
+    timer_scheduler_->epoll_selector_.Add(job->bind_channel,
+                                          SelectEvents::kReadEvent.EdgeTrigger());
+    job->bind_channel->SetTimer(delay, interval);
 
     //    epoll_event event{};
     //    event.data.ptr = new Job(work, !interval.Valid(), &active_queue_, timer_fd);
@@ -124,7 +126,7 @@ lizlib::Worker& lizlib::Worker::operator=(lizlib::Worker&& worker) noexcept {
 lizlib::Job& lizlib::Job::operator=(lizlib::Job&& job) noexcept {
   func = std::move(job.func);
   std::swap(once, job.once);
-  std::swap(binder, job.binder);
+  std::swap(bind_channel, job.bind_channel);
   std::swap(destination, job.destination);
   return *this;
 }

@@ -31,15 +31,15 @@ class Executor {
 struct Job {
   Runnable func{nullptr};
   bool once{true};
-  TimerChannel* binder{nullptr};
+  TimerChannel* bind_channel{nullptr};
   std::deque<Job*>* destination{nullptr};
   Job() = default;
   Job(Runnable func, bool once, std::deque<Job*>* destination, TimerChannel* binder)
-      : func(std::move(func)), once(once), destination(destination), binder(binder) {}
+      : func(std::move(func)), once(once), destination(destination), bind_channel(binder) {}
   LIZ_DISABLE_COPY(Job);
   Job(Job&& job) = default;
   Job& operator=(Job&& job) noexcept;
-  ~Job() { delete binder; }
+  ~Job() { delete bind_channel; }
 };
 
 struct Worker {
@@ -56,6 +56,7 @@ class TimerScheduler {
 
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TimerScheduler);
+  LIZ_CLAIM_SHARED_PTR(TimerScheduler);
   friend class ThreadPool;
   explicit TimerScheduler(uint32_t event_buf_size)
       : thread_{[this]() {
@@ -69,7 +70,6 @@ class TimerScheduler {
       if (thread_.joinable()) {
         thread_.join();
       }
-
       LOG_TRACE("timer scheduler joined");
     }
   }

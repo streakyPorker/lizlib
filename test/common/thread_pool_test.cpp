@@ -69,23 +69,42 @@ TEST(ThreadPoolTest, tpt2) {
 }
 
 TEST(ThreadPoolTest, test_every) {
-  lizlib::log_level = lizlib::Level::kWarn;
+  lizlib::log_level = lizlib::Level::kTrace;
   using namespace std::chrono_literals;
-  ThreadPool pool{1};
+  std::atomic_int64_t val = 0;
+  TimerScheduler::Ptr timer_scheduler = std::make_shared<TimerScheduler>(10);
+  ThreadPool pool{1,timer_scheduler};
   for (int i = 0; i < 5; i++) {
     pool.SubmitEvery(
-      []() {
-        std::cout << "work is running..." << std::endl;
+      [&val]() {
+        std::cout << "work is running..." << val.fetch_add(1) << std::endl;
         std::this_thread::sleep_for(200ms);
       },
-      5s, 1s);
+      1s, 1s);
   }
-  for (int i = 0; i < 10; i++) {
-    fmt::println("sleep 1s");
-    std::cout.flush();
+  for (int i = 0; i < 5; i++) {
+    LOG_TRACE("wait {}s", i);
     std::this_thread::sleep_for(1s);
   }
+  LOG_TRACE("{}", val.load());
+
+
+  ThreadPool pool2{1,timer_scheduler};
+  for (int i = 0; i < 5; i++) {
+    pool2.SubmitEvery(
+      [&val]() {
+        std::cout << "work is running..." << val.fetch_add(1) << std::endl;
+        std::this_thread::sleep_for(200ms);
+      },
+      1s, 1s);
+  }
+  for (int i = 0; i < 5; i++) {
+    LOG_TRACE("wait {}s", i);
+    std::this_thread::sleep_for(1s);
+  }
+  LOG_TRACE("{}", val.load());
   pool.Join();
+  pool2.Join();
 }
 
 TEST(ThreadPoolTest, testDelay) {

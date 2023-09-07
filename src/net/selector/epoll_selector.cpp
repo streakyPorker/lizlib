@@ -15,14 +15,16 @@ void lizlib::EpollSelector::Update(lizlib::Channel* channel, lizlib::SelectEvent
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
                                            lizlib::SelectChannels* selected) {
-  int count = ::epoll_pwait(fd_, epoll_events_.data(), (int)epoll_events_.size(),
-                            (int)timeout.MilliSec(), nullptr);
+  int count = ::epoll_wait(fd_, epoll_events_.data(), (int)epoll_events_.size(),
+                            (int)timeout.MilliSec());
   if (count < 0) {
     LOG_WARN("{}'s epoll_wait turns out abnormal", *this);
     return Status::FromErr();
   }
   selected->occur_ts = Timestamp::Now();
   selected->events.clear();
+  selected->channels.clear();
+  std::cout.flush();
   for (int i = 0; i < count; i++) {
     selected->channels.emplace_back(static_cast<Channel*>(epoll_events_[i].data.ptr));
     selected->events.emplace_back(epoll_events_[i].events);

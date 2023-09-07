@@ -21,7 +21,7 @@
 #include <utility>
 #include "config.h"
 
-#define LIZ_FORMATTER_REGISTRY(T)                                                           \
+#define LIZ_FORMATTER_REGISTRY(T)                                                       \
   template <>                                                                           \
   struct fmt::formatter<T> {                                                            \
     constexpr auto parse(format_parse_context& ctx) -> format_parse_context::iterator { \
@@ -32,11 +32,11 @@
     };                                                                                  \
   }
 
-#define LIZ_DISABLE_MOVE(T)     \
+#define LIZ_DISABLE_MOVE(T) \
   T(T&&) noexcept = delete; \
   T& operator=(T&&) noexcept = delete
 
-#define LIZ_DISABLE_COPY(T)               \
+#define LIZ_DISABLE_COPY(T)           \
   T(const T&) noexcept = delete;      \
   T(T&) noexcept = delete;            \
   T& operator=(T&) noexcept = delete; \
@@ -58,7 +58,7 @@
 
 #define NON_EXPLICIT
 
-#define LIZ_ESCAPABLE_MEM(ptr, size)                        \
+#define LIZ_ESCAPABLE_MEM(ptr, size)                   \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
   if (size <= kStackAllocMaximum) { /*on stack*/       \
     ptr = static_cast<decltype(ptr)>(::alloca(size));  \
@@ -66,7 +66,6 @@
     ptr = static_cast<decltype(ptr)>(::malloc(size));  \
     __cleaner##ptr.reset((char*)ptr);                  \
   }
-
 
 #define LIZ_CLAIM_SHARED_PTR(type) using Ptr = std::shared_ptr<type>
 #define LIZ_CLAIM_UNIQUE_PTR(type) using UniPtr = std::unique_ptr<type>
@@ -127,11 +126,15 @@ struct Duration : Comparable<Duration> {
   [[nodiscard]] inline std::chrono::microseconds MicroSec() const noexcept {
     return std::chrono::microseconds(usecs);
   };
-  [[nodiscard]] inline int64_t MilliSec() const noexcept { return usecs / 1000L; };
-  [[nodiscard]] inline int64_t Sec() const noexcept { return usecs / 1000000L; };
+  [[nodiscard]] inline int64_t MilliSec() const noexcept { return Valid() ? usecs / 1000L : -1; };
+  [[nodiscard]] inline int64_t Sec() const noexcept { return Valid() ? usecs / 1000000 : -1L; };
 
-  [[nodiscard]] inline int64_t MicrosBelowMilli() const noexcept { return usecs % 1000L; };
-  [[nodiscard]] inline int64_t MicrosBelowSec() const noexcept { return usecs % 1000000L; };
+  [[nodiscard]] inline int64_t MicrosBelowMilli() const noexcept {
+    return Valid() ? usecs % 1000L : -1;
+  };
+  [[nodiscard]] inline int64_t MicrosBelowSec() const noexcept {
+    return Valid() ? usecs % 1000000L : -1;
+  };
 
  private:
   Duration() = default;
