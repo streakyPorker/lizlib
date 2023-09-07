@@ -1,21 +1,21 @@
 
 
-#ifndef LIZLIB_BARRIER_H
-#define LIZLIB_BARRIER_H
+#ifndef LIZLIB_BLOCKABLE_BARRIER_H
+#define LIZLIB_BLOCKABLE_BARRIER_H
 #include <atomic>
 #include "common/basic.h"
-#include "latch.h"
+#include "cond_var.h"
 namespace lizlib {
 class BlockableBarrier {
  public:
-  explicit BlockableBarrier(size_t waits, Latch* blocker = nullptr)
+  explicit BlockableBarrier(size_t waits, CondVar* blocker = nullptr)
       : total_(waits), waiting_(0), own_mutex_(true), blocker_(blocker) {
     mu_ = new std::mutex;
     cv_ = new std::condition_variable;
   }
 
   BlockableBarrier(size_t waits, std::mutex* mutex, std::condition_variable* cv,
-                   bool own_mutex = false, Latch* blocker = nullptr)
+                   bool own_mutex = false, CondVar* blocker = nullptr)
       : total_(waits),
         waiting_(0),
         own_mutex_(own_mutex),
@@ -50,8 +50,8 @@ class BlockableBarrier {
   std::mutex* mu_;
   std::condition_variable* cv_;
   bool own_mutex_;
-  Latch* blocker_{nullptr};
+  CondVar* blocker_{nullptr};
 };
 }  // namespace lizlib
 
-#endif  //LIZLIB_BARRIER_H
+#endif  //LIZLIB_BLOCKABLE_BARRIER_H

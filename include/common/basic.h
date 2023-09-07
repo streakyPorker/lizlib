@@ -21,7 +21,7 @@
 #include <utility>
 #include "config.h"
 
-#define FORMATTER_REGISTRY(T)                                                           \
+#define LIZ_FORMATTER_REGISTRY(T)                                                           \
   template <>                                                                           \
   struct fmt::formatter<T> {                                                            \
     constexpr auto parse(format_parse_context& ctx) -> format_parse_context::iterator { \
@@ -32,19 +32,19 @@
     };                                                                                  \
   }
 
-#define DISABLE_MOVE(T)     \
+#define LIZ_DISABLE_MOVE(T)     \
   T(T&&) noexcept = delete; \
   T& operator=(T&&) noexcept = delete
 
-#define DISABLE_COPY(T)               \
+#define LIZ_DISABLE_COPY(T)               \
   T(const T&) noexcept = delete;      \
   T(T&) noexcept = delete;            \
   T& operator=(T&) noexcept = delete; \
   T& operator=(const T&) noexcept = delete
 
-#define DISABLE_COPY_AND_MOVE(T) \
-  DISABLE_COPY(T);               \
-  DISABLE_MOVE(T)
+#define LIZ_DISABLE_COPY_AND_MOVE(T) \
+  LIZ_DISABLE_COPY(T);               \
+  LIZ_DISABLE_MOVE(T)
 
 #define ValidFd(fd) ((fd) >= 0)
 
@@ -58,7 +58,7 @@
 
 #define NON_EXPLICIT
 
-#define EscapableMem(ptr, size)                        \
+#define LIZ_ESCAPABLE_MEM(ptr, size)                        \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
   if (size <= kStackAllocMaximum) { /*on stack*/       \
     ptr = static_cast<decltype(ptr)>(::alloca(size));  \
@@ -66,6 +66,10 @@
     ptr = static_cast<decltype(ptr)>(::malloc(size));  \
     __cleaner##ptr.reset((char*)ptr);                  \
   }
+
+
+#define LIZ_CLAIM_SHARED_PTR(type) using Ptr = std::shared_ptr<type>
+#define LIZ_CLAIM_UNIQUE_PTR(type) using UniPtr = std::unique_ptr<type>
 
 namespace lizlib {
 inline char* ceil_page_align_addr(void* ptr) {
@@ -172,6 +176,6 @@ struct Timestamp : public Comparable<Timestamp> {
 
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::Timestamp);
+LIZ_FORMATTER_REGISTRY(lizlib::Timestamp);
 
 #endif  //LIZLIB_BASIC_H

@@ -16,8 +16,7 @@ lizlib::Buffer::~Buffer() {
     deleter_(static_cast<char*>(data_));
   }
 }
-bool lizlib::Buffer::ensureWritable(size_t require, bool capped,
-                                    bool drop_read_bytes) {
+bool lizlib::Buffer::ensureWritable(size_t require, bool capped, bool drop_read_bytes) {
   size_t w = WritableBytes();
   if (require == 0 || require <= w) {
     return true;
@@ -29,8 +28,7 @@ bool lizlib::Buffer::ensureWritable(size_t require, bool capped,
     return true;
   }
 
-  auto new_length =
-    capped ? used + require : nextPowOfTwo(length_, used + require);
+  auto new_length = capped ? used + require : nextPowOfTwo(length_, used + require);
   char* new_data;
   if (aligned_) {
     new_data = static_cast<char*>(::aligned_alloc(kPageSize, new_length));
@@ -51,8 +49,7 @@ bool lizlib::Buffer::ensureWritable(size_t require, bool capped,
   return true;
 }
 
-ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped,
-                               bool drop_read_bytes) {
+ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped, bool drop_read_bytes) {
   ifUnlikely(!ensureWritable(size, capped, drop_read_bytes)) {
     return -1;
   }
@@ -60,8 +57,7 @@ ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped,
   w_idx_ += size;
   return size;
 }
-ssize_t lizlib::Buffer::Append(const File* file, bool capped,
-                               bool drop_read_bytes) {
+ssize_t lizlib::Buffer::Append(const File* file, bool capped, bool drop_read_bytes) {
   ssize_t file_size = file->Size();
   ssize_t ret = -1;
   ifUnlikely(!ensureWritable(file_size, capped, drop_read_bytes)) {
@@ -131,7 +127,7 @@ ssize_t lizlib::Buffer::Read(lizlib::File* file, ssize_t size) {
   ssize_t splits = (left / kFileRWUnit) + 1;
   ssize_t mod = left % kFileRWUnit;
   Slice* slices;
-  EscapableMem(slices, sizeof(slices) * (splits + 1));
+  LIZ_ESCAPABLE_MEM(slices, sizeof(slices) * (splits + 1));
   for (int i = 0; i < splits; ++i) {
     slices[i + 1].Data(next_page + i * kFileRWUnit);
     if (i == splits - 1) {
@@ -147,8 +143,7 @@ ssize_t lizlib::Buffer::Read(lizlib::File* file, ssize_t size) {
   return ret;
 }
 
-ssize_t lizlib::Buffer::Append(lizlib::Slice& slice, bool capped,
-                               bool drop_read_bytes) {
+ssize_t lizlib::Buffer::Append(lizlib::Slice& slice, bool capped, bool drop_read_bytes) {
   ssize_t size = slice.Length();
   ifUnlikely(!ensureWritable(size, capped, drop_read_bytes)) {
     return -1;
@@ -165,8 +160,7 @@ void lizlib::Buffer::Rearrange() {
   r_idx_ = 0;
   w_idx_ = used;
 }
-ssize_t lizlib::Buffer::Transfer(lizlib::Buffer& from, bool capped,
-                                 bool drop_read_bytes) {
+ssize_t lizlib::Buffer::Transfer(lizlib::Buffer& from, bool capped, bool drop_read_bytes) {
   ssize_t size = from.ReadableBytes();
   ifUnlikely(!ensureWritable(size, capped, drop_read_bytes)) {
     return -1;

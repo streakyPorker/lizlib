@@ -11,8 +11,7 @@ class Buffer : public Slice {
   using Deleter = void (*)(void*);
   Buffer() = default;
   explicit Buffer(size_t length, bool aligned = true)
-      : Buffer(aligned ? ::aligned_alloc(kPageSize, length) : malloc(length),
-               length, free) {
+      : Buffer(aligned ? ::aligned_alloc(kPageSize, length) : malloc(length), length, free) {
     aligned_ = aligned;
   }
   Buffer(const Buffer& cpy) = default;
@@ -23,29 +22,22 @@ class Buffer : public Slice {
 
   Buffer(void* data, size_t length, Deleter deleter = nullptr)
       : Slice(data, length), deleter_(deleter) {}
-  Buffer(const std::string& str, Deleter deleter = nullptr)
-      : Slice(str), deleter_(deleter) {}
-  Buffer(std::string&& str, Deleter deleter = nullptr)
-      : Slice(std::move(str)), deleter_(deleter) {}
+  Buffer(const std::string& str, Deleter deleter = nullptr) : Slice(str), deleter_(deleter) {}
+  Buffer(std::string&& str, Deleter deleter = nullptr) : Slice(std::move(str)), deleter_(deleter) {}
 
   [[nodiscard]] inline uint64_t RIndex() const { return r_idx_; }
   [[nodiscard]] inline ssize_t ReadableBytes() const { return w_idx_ - r_idx_; }
-  [[nodiscard]] inline ssize_t WritableBytes() const {
-    return length_ - w_idx_;
-  }
+  [[nodiscard]] inline ssize_t WritableBytes() const { return length_ - w_idx_; }
   [[nodiscard]] inline uint64_t WIndex() const { return w_idx_; }
   [[nodiscard]] inline char* RPtr() const { return data_ + r_idx_; }
   [[nodiscard]] inline char* WPtr() const { return data_ + w_idx_; }
 
-  ssize_t Append(const void* data, size_t size, bool capped,
-                 bool drop_read_bytes = false);
+  ssize_t Append(const void* data, size_t size, bool capped, bool drop_read_bytes = false);
 
-  ssize_t Append(const void* data, size_t size) {
-    return Append(data, size, false);
-  }
+  ssize_t Append(const void* data, size_t size) { return Append(data, size, false); }
+
   template <typename Basic>
-  ssize_t AppendBasic(const Basic& v, bool capped = false,
-                      bool drop_read_bytes = false) {
+  ssize_t AppendBasic(const Basic& v, bool capped = false, bool drop_read_bytes = false) {
     ssize_t size = sizeof(Basic);
     ifUnlikely(!ensureWritable(size, capped, drop_read_bytes)) {
       return -1;
@@ -55,14 +47,11 @@ class Buffer : public Slice {
     return size;
   }
 
-  ssize_t Append(const File* file, bool capped = false,
-                 bool drop_read_bytes = false);
+  ssize_t Append(const File* file, bool capped = false, bool drop_read_bytes = false);
 
-  ssize_t Append(Slice& slice, bool capped = false,
-                 bool drop_read_bytes = false);
+  ssize_t Append(Slice& slice, bool capped = false, bool drop_read_bytes = false);
 
-  ssize_t Append(Buffer& buffer, bool capped = false,
-                 bool drop_read_bytes = false) {
+  ssize_t Append(Buffer& buffer, bool capped = false, bool drop_read_bytes = false) {
     ssize_t size = buffer.ReadableBytes();
     ifUnlikely(!ensureWritable(size, capped, drop_read_bytes)) {
       return -1;
@@ -71,8 +60,7 @@ class Buffer : public Slice {
     return ret;
   }
 
-  ssize_t Transfer(Buffer& from, bool capped = false,
-                   bool drop_read_bytes = false);
+  ssize_t Transfer(Buffer& from, bool capped = false, bool drop_read_bytes = false);
 
   template <typename Basic>
   [[maybe_unused]] Basic ReadBasic() {
@@ -104,8 +92,8 @@ class Buffer : public Slice {
   ~Buffer() override;
 
   [[nodiscard]] inline std::string String() const {
-    return fmt::format("{:x}({})-[r:{},w:{}],deleter={:x}", (uint64_t)data_,
-                       length_, r_idx_, w_idx_, (uint64_t)deleter_);
+    return fmt::format("{:x}({})-[r:{},w:{}],deleter={:x}", (uint64_t)data_, length_, r_idx_,
+                       w_idx_, (uint64_t)deleter_);
   }
 
  private:
@@ -136,6 +124,6 @@ class Buffer : public Slice {
 };
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::Buffer);
+LIZ_FORMATTER_REGISTRY(lizlib::Buffer);
 
 #endif  //LIZLIB_BUFFER_H

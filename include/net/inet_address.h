@@ -72,6 +72,6 @@ class InetAddress {
 
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::InetAddress);
+LIZ_FORMATTER_REGISTRY(lizlib::InetAddress);
 
 #endif  //LIZLIB_INET_ADDRESS_H

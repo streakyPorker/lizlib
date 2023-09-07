@@ -18,13 +18,12 @@ const SelectEvents SelectEvents::kNoneEvent{0};
 const SelectEvents SelectEvents::kReadEvent{EPOLLIN | EPOLLPRI};
 const SelectEvents SelectEvents::kWriteEvent{EPOLLOUT};
 
-void SelectEvents::Trigger(SelectTrigger trigger) noexcept {
-  SelectEvents events = *this;
-  if (trigger == SelectTrigger::kEdge) {
-    events.Add(SelectEvents{EPOLLET});
-  } else {
-    events.Remove(SelectEvents{EPOLLET});
-  }
+
+SelectEvents SelectEvents::EdgeTrigger() const noexcept {
+  return SelectEvents{events_ | EPOLLET};
+}
+SelectEvents SelectEvents::HorizonTrigger() const noexcept {
+  return SelectEvents{events_ & (~EPOLLET)};
 }
 
 };  // namespace lizlib

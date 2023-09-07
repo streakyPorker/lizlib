@@ -22,8 +22,7 @@ lizlib::File lizlib::EventChannel::createEventFile(bool non_block, bool sync) {
   return File{fd};
 }
 
-void lizlib::EventChannel::HandleEvents(lizlib::ReceiveEvents events,
-                                        lizlib::Timestamp now) {
+void lizlib::EventChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {
   Inner val;
 
   // validate file first

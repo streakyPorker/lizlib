@@ -16,7 +16,7 @@ class File {
  public:
   using SeekMode = int;
 
-  DISABLE_COPY(File);
+  LIZ_DISABLE_COPY(File);
 
   // only move ctor allowed
   File(File&& file) noexcept : fd_(file.fd_), flags_(file.flags_) {
@@ -33,21 +33,18 @@ class File {
   static File From(int fd) { return File(fd); }
 
   [[nodiscard]] inline int Fd() const { return fd_; }
-  [[nodiscard]] inline bool Valid() const { return fd_ == -1; }
+  [[nodiscard]] inline bool Valid() const { return fd_ != -1; }
   [[nodiscard]] inline bool Direct() const { return (flags_ & O_DIRECT) == 0; }
 
   Status Close() noexcept;
 
-  inline ssize_t Read(void* buf, size_t size) const noexcept {
-    return ::read(fd_, buf, size);
-  }
+  inline ssize_t Read(void* buf, size_t size) const noexcept { return ::read(fd_, buf, size); }
 
   ssize_t Readv(const Slice* buf, size_t n) const;
 
   ssize_t Pread(void* buf, size_t n, uint64_t offset) const;
 
-  ssize_t Preadv(const Slice* bufs, size_t n, uint64_t offset,
-                 int flags = 0) const;
+  ssize_t Preadv(const Slice* bufs, size_t n, uint64_t offset, int flags = 0) const;
 
   size_t Write(const void* buf, size_t size) noexcept;
 
@@ -67,9 +64,7 @@ class File {
 
   [[nodiscard]] ssize_t Size() const;
 
-  [[nodiscard]] virtual std::string String() const {
-    return fmt::format("{}", fd_);
-  }
+  [[nodiscard]] virtual std::string String() const { return fmt::format("{}", fd_); }
 
  protected:
   int fd_{-1};
@@ -78,6 +73,6 @@ class File {
 };
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::File);
+LIZ_FORMATTER_REGISTRY(lizlib::File);
 
 #endif  //LIZLIB_FILE_H

@@ -1,7 +1,7 @@
 //
 // Created by lzy on 2023/8/20.
 //
-#include "common/thread_pool.h"
+#include "concurrent/thread_pool.h"
 
 #include <liburing.h>
 #include <netinet/in.h>
@@ -22,7 +22,7 @@ using namespace lizlib;
 #define NUM_REQUESTS 5
 
 TEST(EPOLL_TEST, timefd_test) {
-  int timer_fd = ::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC|TFD_NONBLOCK);
+  int timer_fd = ::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
 
   struct itimerspec timer_spec;
   timer_spec.it_value.tv_sec = 1;
@@ -48,10 +48,9 @@ TEST(EPOLL_TEST, timefd_test) {
     int num_events = epoll_wait(epoll_fd, events, 10, -1);
 
     if (num_events > 0) {
-      fmt::println("Timer expired! fd:{} events:{}", events[0].data.fd,
-                   events[0].events);
+      fmt::println("Timer expired! fd:{} events_:{}", events[0].data.fd, events[0].events);
       char buf[10];
-      fmt::println("{} bytes read,{}",read(*(int*)events[0].data.ptr, buf, 10),*(long*)(buf));
+      fmt::println("{} bytes read,{}", read(*(int*)events[0].data.ptr, buf, 10), *(long*)(buf));
       std::cout.flush();
     } else {
       fmt::println("no fd avail {}", num_events);
@@ -62,3 +61,23 @@ TEST(EPOLL_TEST, timefd_test) {
   close(timer_fd);
 }
 
+TEST(EPOLL_TEST, time_channel_test) {
+  using namespace std::chrono_literals;
+
+  TimerScheduler timer_scheduler{10};
+  TimerChannel timer_channel{[]() {
+    thread_local int v = 0;
+    fmt::println("trigger! {}", v++);
+    std::cout.flush();
+  }};
+  SelectChannels select_channels;
+  timer_scheduler.epoll_selector_.Add(&timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
+  timer_channel.SetTimer(1s, 1s);
+  for (int i = 0; i < 5; i++) {
+    timer_scheduler.epoll_selector_.Wait(10s, &select_channels);
+    select_channels.Process();
+  }
+  fmt::println("here");
+  std::cout.flush();
+  timer_scheduler.Join();
+}

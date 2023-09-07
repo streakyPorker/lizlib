@@ -3,7 +3,7 @@
 #include "common/file.h"
 lizlib::Status lizlib::File::Close() noexcept {
   if (Valid()) {
-    LOG_TRACE("{})(fd:{})::Close()", *this, fd_);
+    LOG_TRACE("File(fd:{})::Close()", fd_);
     auto rst = Status::FromRet(::close(fd_));
     if (rst.OK()) {
       fd_ = -1;
@@ -14,7 +14,7 @@ lizlib::Status lizlib::File::Close() noexcept {
 }
 ssize_t lizlib::File::Readv(const lizlib::Slice* bufs, size_t n) const {
   struct iovec* blocks;
-  EscapableMem(blocks, sizeof(struct iovec) * n);
+  LIZ_ESCAPABLE_MEM(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
     blocks[i].iov_base = bufs[i].Data();
@@ -22,10 +22,10 @@ ssize_t lizlib::File::Readv(const lizlib::Slice* bufs, size_t n) const {
   }
   return ::readv(fd_, blocks, n);
 }
-ssize_t lizlib::File::Preadv(const lizlib::Slice* bufs, size_t n,
-                             uint64_t offset, int flags) const {
+ssize_t lizlib::File::Preadv(const lizlib::Slice* bufs, size_t n, uint64_t offset,
+                             int flags) const {
   struct iovec* blocks;
-  EscapableMem(blocks, sizeof(struct iovec) * n);
+  LIZ_ESCAPABLE_MEM(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
     blocks[i].iov_base = bufs[i].Data();
@@ -36,7 +36,7 @@ ssize_t lizlib::File::Preadv(const lizlib::Slice* bufs, size_t n,
 
 ssize_t lizlib::File::Writev(lizlib::Slice* buf, size_t n) {
   struct iovec* blocks;
-  EscapableMem(blocks, sizeof(struct iovec) * n);
+  LIZ_ESCAPABLE_MEM(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
     blocks[i].iov_base = buf[i].Data();
@@ -68,10 +68,9 @@ ssize_t lizlib::File::Pread(void* buf, size_t n, uint64_t offset) const {
 ssize_t lizlib::File::Pwrite(const void* buf, size_t n, uint64_t offset) {
   return ::pwrite64(fd_, buf, n, offset);
 }
-ssize_t lizlib::File::Pwritev(lizlib::Slice* bufs, size_t n, uint64_t offset,
-                              int flags) {
+ssize_t lizlib::File::Pwritev(lizlib::Slice* bufs, size_t n, uint64_t offset, int flags) {
   struct iovec* blocks;
-  EscapableMem(blocks, sizeof(struct iovec) * n);
+  LIZ_ESCAPABLE_MEM(blocks, sizeof(struct iovec) * n);
   for (int i = 0; i < n; ++i) {
     // const cast removes qualifier
     blocks[i].iov_base = bufs[i].Data();
@@ -88,8 +87,7 @@ lizlib::Status lizlib::File::Remove(const char* name) {
 ssize_t lizlib::File::Truncate(ssize_t new_size) {
   return ::ftruncate64(fd_, new_size);
 }
-lizlib::File lizlib::File::Open(const char* name, int32_t flags,
-                                int32_t createOp) {
+lizlib::File lizlib::File::Open(const char* name, int32_t flags, int32_t createOp) {
   auto file = File();
   file.flags_ = flags;
   if ((flags & O_CREAT) != 0) {

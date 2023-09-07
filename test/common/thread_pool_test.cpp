@@ -2,7 +2,7 @@
 // Created by A on 2023/8/3.
 //
 
-#include "common/thread_pool.h"
+#include "concurrent/thread_pool.h"
 
 #include "common/basic.h"
 #include "common/logger.h"
@@ -11,12 +11,51 @@ using namespace lizlib;
 
 TEST(ThreadPoolTest, tpt1) {
   using namespace std::chrono_literals;
-  ThreadPool pool{std::thread::hardware_concurrency(), false};
-  for (int i = 0; i < 3; i++) {
-    std::cout << "waiting " << i << std::endl;
-    std::this_thread::sleep_for(1s);
+  ThreadPool pool{1};
+
+  for (int i = 0; i < 20; i++) {
+    pool.Submit(
+      [&i](void* val) {
+        std::cout << "work is running..." << std::endl;
+        std::this_thread::sleep_for(200ms);
+      },
+      nullptr);
   }
-  pool.Start();
+  std::this_thread::sleep_for(5s);
+  pool.Join();
+}
+
+TEST(ThreadPoolTest, test_multi_pool_single_scheduler) {
+  using namespace std::chrono_literals;
+  std::shared_ptr<TimerScheduler> scheduler = std::make_shared<TimerScheduler>(20);
+  ThreadPool pool1{1, scheduler};
+  ThreadPool pool2{1, scheduler};
+
+  for (int i = 0; i < 20; i++) {
+    pool1.Submit(
+      [&i](void* val) {
+        std::cout << "work is running..." << std::endl;
+        std::this_thread::sleep_for(200ms);
+      },
+      nullptr);
+    pool2.Submit(
+      [&i](void* val) {
+        std::cout << "work is running..." << std::endl;
+        std::this_thread::sleep_for(200ms);
+      },
+      nullptr);
+  }
+  std::this_thread::sleep_for(5s);
+  pool1.Join();
+  fmt::println("between p1 and p2");
+  std::cout.flush();
+  pool2.Join();
+  fmt::println("after p1 and p2");
+}
+TEST(ThreadPoolTest, tpt2) {
+  using namespace std::chrono_literals;
+  ThreadPool pool{std::thread::hardware_concurrency()};
+
   for (int i = 0; i < 20 * 20; i++) {
     pool.Submit(
       [&i](void* val) {
@@ -26,47 +65,27 @@ TEST(ThreadPoolTest, tpt1) {
       nullptr);
   }
   std::this_thread::sleep_for(5s);
-  pool.Stop();
+  pool.Join();
 }
 
-TEST(ThreadPoolTest, test_delay) {
+TEST(ThreadPoolTest, test_every) {
   lizlib::log_level = lizlib::Level::kWarn;
   using namespace std::chrono_literals;
-  ThreadPool pool{1, true};
+  ThreadPool pool{1};
   for (int i = 0; i < 5; i++) {
     pool.SubmitEvery(
       []() {
         std::cout << "work is running..." << std::endl;
         std::this_thread::sleep_for(200ms);
       },
-      5s,1s);
+      5s, 1s);
   }
-  for(int i=0;i<10;i++){
+  for (int i = 0; i < 10; i++) {
     fmt::println("sleep 1s");
     std::cout.flush();
     std::this_thread::sleep_for(1s);
   }
-  pool.Stop();
-}
-
-void myThreadFunction() {
-  // 在这里编写线程的任务代码
-  std::cout << "Thread is running..." << std::endl;
-  // 假设线程执行一些耗时任务
-  std::this_thread::sleep_for(std::chrono::seconds(5));
-  std::cout << "Thread has once its task." << std::endl;
-}
-
-TEST(ThreadPoolTest, tpt2) {
-  std::thread myThread(myThreadFunction);
-
-  // 让主线程等待一段时间
-  std::cout << "Main thread is waiting..." << std::endl;
-  std::this_thread::sleep_for(std::chrono::seconds(2));
-
-  // 等待新线程结束
-  myThread.join();
-  std::cout << "Main thread has once." << std::endl;
+  pool.Join();
 }
 
 TEST(ThreadPoolTest, testDelay) {

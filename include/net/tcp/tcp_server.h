@@ -5,6 +5,8 @@
 #ifndef LIZLIB_TCP_SERVER_H
 #define LIZLIB_TCP_SERVER_H
 
+namespace lizlib {
 class TcpServer {};
+}  // namespace lizlib
 
 #endif  //LIZLIB_TCP_SERVER_H

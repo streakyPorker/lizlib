@@ -43,6 +43,6 @@ class Status {
 };
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::Status);
+LIZ_FORMATTER_REGISTRY(lizlib::Status);
 
 #endif  //LIZLIB_STATUS_H

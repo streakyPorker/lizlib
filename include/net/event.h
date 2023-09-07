@@ -11,7 +11,7 @@
 namespace lizlib {
 
 /**
- * base class of events
+ * base class of events_
  */
 class Events {
  public:
@@ -46,16 +46,14 @@ class Events {
     return false;
   }
 
-  bool operator!=(const Events& other) const noexcept {
-    return events_ != other.events_;
-  }
+  bool operator!=(const Events& other) const noexcept { return events_ != other.events_; }
 
   const Events& operator|(const Events& other) noexcept {
     events_ |= other.events_;
     return *this;
   }
   [[nodiscard]] virtual std::string String() const noexcept {
-    return fmt::format("events:{}", events_);
+    return fmt::format("events_:{}", events_);
   };
 
  protected:
@@ -89,10 +87,11 @@ class SelectEvents final : public Events {
   static const SelectEvents kWriteEvent;
 
   [[nodiscard]] SelectTrigger Trigger() const noexcept {
-    return (events_ & EPOLLET) == 0 ? SelectTrigger::kHorizon
-                                    : SelectTrigger::kEdge;
+    return (events_ & EPOLLET) == 0 ? SelectTrigger::kHorizon : SelectTrigger::kEdge;
   };
-  void Trigger(SelectTrigger trigger) noexcept;
+
+  SelectEvents EdgeTrigger() const noexcept;
+  SelectEvents HorizonTrigger() const noexcept;
 
   [[nodiscard]] std::string String() const noexcept override {
     char buf[3]{};
@@ -103,6 +102,6 @@ class SelectEvents final : public Events {
 };
 
 }  // namespace lizlib
-FORMATTER_REGISTRY(lizlib::Events);
+LIZ_FORMATTER_REGISTRY(lizlib::Events);
 
 #endif  //LIZLIB_EVENT_H

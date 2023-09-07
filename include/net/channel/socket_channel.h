@@ -11,7 +11,8 @@
 namespace lizlib {
 class SocketChannel final : public Socket, Channel {
  public:
-  explicit SocketChannel(Socket socket) : Socket(std::move(socket)) {}
+  LIZ_CLAIM_SHARED_PTR(SocketChannel);
+  explicit SocketChannel(Socket&& socket) : Socket(std::move(socket)) {}
   SocketChannel(Socket socket, Selector* selector)
       : Socket(std::move(socket)), selector_(selector) {}
   ~SocketChannel() override = default;
@@ -34,21 +35,13 @@ class SocketChannel final : public Socket, Channel {
    */
   void SetWritable(bool on);
 
-  void OnRead(SelectorCallback read_callback) {
-    read_callback_ = std::move(read_callback);
-  }
+  void OnRead(SelectorCallback read_callback) { read_callback_ = std::move(read_callback); }
 
-  void OnClose(SelectorCallback close_callback) {
-    close_callback_ = std::move(close_callback);
-  }
+  void OnClose(SelectorCallback close_callback) { close_callback_ = std::move(close_callback); }
 
-  void OnWrite(SelectorCallback write_callback) {
-    write_callback_ = std::move(write_callback);
-  }
+  void OnWrite(SelectorCallback write_callback) { write_callback_ = std::move(write_callback); }
 
-  void OnError(SelectorCallback error_callback) {
-    error_callback_ = std::move(error_callback);
-  }
+  void OnError(SelectorCallback error_callback) { error_callback_ = std::move(error_callback); }
 
   const File& GetFile() override;
 
@@ -74,6 +67,6 @@ class SocketChannel final : public Socket, Channel {
 };
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::SocketChannel);
+LIZ_FORMATTER_REGISTRY(lizlib::SocketChannel);
 
 #endif  //LIZLIB_SOCKET_CHANNEL_H

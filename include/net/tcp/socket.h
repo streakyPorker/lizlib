@@ -54,9 +54,7 @@ class Socket : public File {
 
   void Shutdown(bool close_read = true);
 
-  [[nodiscard]] std::string String() const override {
-    return fmt::format("[Socket{}]", fd_);
-  }
+  [[nodiscard]] std::string String() const override { return fmt::format("[Socket{}]", fd_); }
 
  private:
   explicit Socket(int fd) : File(fd) {}
@@ -64,6 +62,6 @@ class Socket : public File {
 
 }  // namespace lizlib
 
-FORMATTER_REGISTRY(lizlib::Socket);
+LIZ_FORMATTER_REGISTRY(lizlib::Socket);
 
 #endif  //LIZLIB_SOCKET_H

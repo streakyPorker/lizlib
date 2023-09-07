@@ -17,8 +17,8 @@ namespace lizlib {
  */
 class EventChannel final : public Channel {
  public:
-  EventChannel(bool non_block, bool sync)
-      : Channel(), file_(createEventFile(non_block, sync)) {}
+  LIZ_CLAIM_SHARED_PTR(EventChannel);
+  EventChannel(bool non_block, bool sync) : Channel(), file_(createEventFile(non_block, sync)) {}
   EventChannel() : Channel(), file_(createEventFile()) {}
   ~EventChannel() override = default;
 
@@ -26,9 +26,7 @@ class EventChannel final : public Channel {
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
 
-  inline void SetCallback(Callback callback) {
-    callback_ = std::move(callback);
-  }
+  inline void SetCallback(Callback callback) { callback_ = std::move(callback); }
 
   /**
    * to wake up an event channel, just write a byte to it

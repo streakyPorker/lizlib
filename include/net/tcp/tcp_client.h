@@ -5,6 +5,8 @@
 #ifndef LIZLIB_TCP_CLIENT_H
 #define LIZLIB_TCP_CLIENT_H
 
+namespace lizlib {
 class TcpClient {};
+}  // namespace lizlib
 
 #endif  //LIZLIB_TCP_CLIENT_H

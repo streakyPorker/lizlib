@@ -1,19 +1,16 @@
 
 
-#ifndef LIZLIB_LATCH_H
-#define LIZLIB_LATCH_H
+#ifndef LIZLIB_COND_VAR_H
+#define LIZLIB_COND_VAR_H
 #include "common/basic.h"
 namespace lizlib {
-class Latch {
+class CondVar {
  public:
-  Latch()
-      : mu_(new std::mutex),
-        cv_(new std::condition_variable),
-        own_mutex_(true){};
-  Latch(std::mutex* mutex, std::condition_variable* cv, bool own_mutex = false)
+  CondVar() : mu_(new std::mutex), cv_(new std::condition_variable), own_mutex_(true){};
+  CondVar(std::mutex* mutex, std::condition_variable* cv, bool own_mutex = false)
       : mu_(mutex), cv_(cv), own_mutex_(own_mutex) {}
 
-  ~Latch() {
+  ~CondVar() {
     if (own_mutex_) {
       delete mu_;
       delete cv_;
@@ -34,4 +31,4 @@ class Latch {
 };
 }  // namespace lizlib
 
-#endif  //LIZLIB_LATCH_H
+#endif  //LIZLIB_COND_VAR_H

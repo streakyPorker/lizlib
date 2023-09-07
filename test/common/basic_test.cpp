@@ -21,6 +21,6 @@ TEST(BasicTest, stackAllocTest) {
   int val = 1;
   fmt::println("{}", (void*)&val);
   int *intptr1 = nullptr, *intptr2 = nullptr;
-  EscapableMem(intptr1, 100);
-  EscapableMem(intptr2, 100000);
+  LIZ_ESCAPABLE_MEM(intptr1, 100);
+  LIZ_ESCAPABLE_MEM(intptr2, 100000);
 }

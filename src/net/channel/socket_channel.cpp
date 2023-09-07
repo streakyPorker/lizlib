@@ -7,12 +7,10 @@
 const lizlib::File& lizlib::SocketChannel::GetFile() {
   return *this;
 }
-void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events,
-                                         lizlib::Timestamp now) {
-  LOG_TRACE("{} handling events {}", *this, events.String());
+void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {
+  LOG_TRACE("{} handling events_ {}", *this, events.String());
 
-  if (events.ContainsAny(ReceiveEvents::kReadable,
-                         ReceiveEvents::kPriorReadable,
+  if (events.ContainsAny(ReceiveEvents::kReadable, ReceiveEvents::kPriorReadable,
                          ReceiveEvents::kReadHangUp) &&
       read_callback_ != nullptr) {
     read_callback_(events, now);
@@ -26,8 +24,7 @@ void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events,
     error_callback_(events, now);
   }
 
-  if (events.Contains(ReceiveEvents::kHangUp) &&
-      !events.Contains(ReceiveEvents::kReadable) &&
+  if (events.Contains(ReceiveEvents::kHangUp) && !events.Contains(ReceiveEvents::kReadable) &&
       close_callback_ != nullptr) {
     close_callback_(events, now);
   }
