@@ -76,9 +76,15 @@ class Buffer : public Slice {
     return rst;
   }
 
-  ssize_t Read(void* data, ssize_t size);
+  ssize_t Read(void* data, ssize_t size, bool rearrange = true);
 
   ssize_t Read(File* file, ssize_t size = -1);
+
+  /**
+   * tell the buffer n bytes have been read
+   * @param n
+   */
+  void Retrieve(size_t n, bool rearrange = true);
 
   void Reset();
 

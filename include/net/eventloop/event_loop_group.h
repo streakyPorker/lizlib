@@ -5,6 +5,16 @@
 #ifndef LIZLIB_EVENT_LOOP_GROUP_H
 #define LIZLIB_EVENT_LOOP_GROUP_H
 
-class EventLoopGroup {};
+#include "common/concurrent/thread_pool.h"
+namespace lizlib {
+class EventLoopGroup final : public Executor {
+ public:
+  void Submit(const Runnable& runnable) override;
+  void Join() override;
+  size_t Size() const noexcept override;
+  void SubmitDelay(const Runnable& runnable, Duration delay) override;
+  void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
+};
+}  // namespace lizlib
 
 #endif  //LIZLIB_EVENT_LOOP_GROUP_H

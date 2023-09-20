@@ -17,10 +17,11 @@ namespace lizlib {
 using Runnable = std::function<void()>;
 
 class Executor {
+ public:
   LIZ_DISABLE_COPY_AND_MOVE(Executor);
   virtual void Submit(const Runnable& runnable) = 0;
   virtual void Join() = 0;
-  virtual size_t Size() = 0;
+  virtual size_t Size() const noexcept = 0;
   virtual void SubmitDelay(const Runnable& runnable, Duration delay) = 0;
   virtual void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) = 0;
 
@@ -99,6 +100,7 @@ class TimerScheduler {
 class ThreadPool final : public Executor {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(ThreadPool);
+  LIZ_CLAIM_SHARED_PTR(ThreadPool);
   friend struct TimerScheduler;
 
   ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) {}
@@ -125,7 +127,9 @@ class ThreadPool final : public Executor {
 
   void Join() override;
 
-  size_t Size() override { return core_threads_; }
+  [[nodiscard]] size_t Size() const noexcept override { return core_threads_; }
+
+  [[nodiscard]] TimerScheduler::Ptr GetTimerScheduler() const noexcept { return timer_scheduler_; }
 
  private:
   void enqueueTask(const Runnable& work, Duration delay, Duration interval);

@@ -60,3 +60,12 @@ void lizlib::SocketChannel::SetWritable(bool on) {
     selector_->Update(this, events_);
   }
 }
+lizlib::Status lizlib::SocketChannel::GetError() const noexcept {
+  int val;
+  auto len = static_cast<socklen_t>(sizeof val);
+  if (::getsockopt(fd_, SOL_SOCKET, SO_ERROR, &val, &len) < 0) {
+    return Status::FromErr();
+  } else {
+    return Status{val};
+  }
+}

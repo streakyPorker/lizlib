@@ -93,7 +93,7 @@ ssize_t lizlib::Buffer::Append(const File* file, bool capped, bool drop_read_byt
   }
   return ret;
 }
-ssize_t lizlib::Buffer::Read(void* data, ssize_t size) {
+ssize_t lizlib::Buffer::Read(void* data, ssize_t size, bool rearrange) {
   ifUnlikely(!data_) {
     return -1;
   }
@@ -101,6 +101,9 @@ ssize_t lizlib::Buffer::Read(void* data, ssize_t size) {
   ssize_t read_bytes = std::min(size, (ssize_t)ReadableBytes());
   memcpy(data, RPtr(), read_bytes);
   r_idx_ += read_bytes;
+  if (r_idx_ == w_idx_ && rearrange) {
+    Rearrange();
+  }
   return read_bytes;
 }
 ssize_t lizlib::Buffer::Read(lizlib::File* file, ssize_t size) {
@@ -156,7 +159,9 @@ ssize_t lizlib::Buffer::Append(lizlib::Slice& slice, bool capped, bool drop_read
 }
 void lizlib::Buffer::Rearrange() {
   size_t used = ReadableBytes();
-  std::memmove(data_, data_ + r_idx_, used);
+  if (used != 0) {
+    std::memmove(data_, data_ + r_idx_, used);
+  }
   r_idx_ = 0;
   w_idx_ = used;
 }
@@ -170,4 +175,10 @@ ssize_t lizlib::Buffer::Transfer(lizlib::Buffer& from, bool capped, bool drop_re
     from.r_idx_ += ret;
   }
   return ret;
+}
+void lizlib::Buffer::Retrieve(size_t n, bool rearrange) {
+  r_idx_ = std::min(r_idx_ + n, w_idx_);
+  if (r_idx_ == w_idx_ && rearrange) {
+    Rearrange();
+  }
 }

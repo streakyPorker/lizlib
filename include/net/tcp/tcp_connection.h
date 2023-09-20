@@ -6,6 +6,7 @@
 #define LIZLIB_TCP_CONNECTION_H
 #include "common/basic.h"
 #include "common/buffer.h"
+#include "common/concurrent/thread_pool.h"
 #include "net/channel/socket_channel.h"
 namespace lizlib {
 class TcpConnection;
@@ -55,24 +56,60 @@ class ChannelHandlerAdaptor : public ChannelHandler {
   ChannelContext::Ptr ctx_;
 };
 
-class EventLoop;
+enum class TcpState { kConnected, kDisconnected, kConnecting, kDisconnecting };
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpConnection);
   friend class ChannelContext;
-  enum class ConnState { kConnected, kDisconnected, kConnecting, kDisconnecting };
 
   LIZ_CLAIM_SHARED_PTR(TcpConnection);
 
-  TcpConnection(EventLoop& event_loop, Socket socket)
+  TcpConnection(ThreadPool::Ptr thread_pool, Socket socket)
       : channel_(std::make_shared<SocketChannel>(std::move(socket))),
         local_addr_(channel_->GetLocalAddress()),
-        event_loop_(event_loop),
+        executor_(thread_pool),
         context_(std::make_shared<ChannelContext>()) {}
 
+  ~TcpConnection() = default;
+
+  auto GetChannelContext() noexcept { return context_; }
+
+  TcpState GetState() const noexcept { return state_; }
+
+  void SetHandler(std::shared_ptr<ChannelHandler> handler) { handler_ = std::move(handler); }
+
+  const InetAddress& GetLocalAddress() const noexcept { return local_addr_; }
+
+  InetAddress GetPeerAddress() const noexcept { return channel_->GetPeerAddress(); }
+
+  void Start();
+
+  void Send(Buffer* buf);
+
+  void Send(std::string_view buffer);
+
+  void Send(std::string buffer);
+
+  /**
+ * should check state to see if Close() succeeded
+ */
+  void Close();
+  void Shutdown();
+  void ForceShutdown();
+  void ForceClose();
+
+  std::string String() const;
+
  private:
-  std::atomic<ConnState> state_{ConnState::kConnecting};
+  void handleRead(Timestamp now);
+  void handleError(Status);
+  void handleWrite();
+  void handleClose();
+  void handleRemove();
+  void handleSend(std::string_view buffer);
+
+  std::atomic<TcpState> state_{TcpState::kConnecting};
 
   Buffer output_;
   Buffer input_;
@@ -82,8 +119,10 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   ChannelContext::Ptr context_;
 
   InetAddress local_addr_;
-  EventLoop& event_loop_;
+  std::shared_ptr<Executor> executor_;
 };
 }  // namespace lizlib
+
+LIZ_FORMATTER_REGISTRY(lizlib::TcpConnection);
 
 #endif  //LIZLIB_TCP_CONNECTION_H

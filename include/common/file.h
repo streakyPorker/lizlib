@@ -62,6 +62,8 @@ class File {
 
   ssize_t Truncate(ssize_t new_size);
 
+  virtual Status GetError() const noexcept { return Status::FromErr(); };
+
   [[nodiscard]] ssize_t Size() const;
 
   [[nodiscard]] virtual std::string String() const { return fmt::format("{}", fd_); }

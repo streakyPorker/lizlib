@@ -46,6 +46,12 @@ class SocketChannel final : public Socket, Channel {
   const File& GetFile() override;
 
   /**
+   * Get error code from socket, different from mere file
+   * @return
+   */
+  [[nodiscard]] Status GetError() const noexcept override;
+
+  /**
    * event process rules of socket channel:
    * <li>on one of readable/pri-readable/read-hangup, trigger read callback</li>
    * <li>on writable, trigger write callback</li>

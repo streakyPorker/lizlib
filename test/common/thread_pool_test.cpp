@@ -2,7 +2,7 @@
 // Created by A on 2023/8/3.
 //
 
-#include "concurrent/thread_pool.h"
+#include "common/concurrent/thread_pool.h"
 
 #include "common/basic.h"
 #include "common/logger.h"
@@ -73,7 +73,7 @@ TEST(ThreadPoolTest, test_every) {
   using namespace std::chrono_literals;
   std::atomic_int64_t val = 0;
   TimerScheduler::Ptr timer_scheduler = std::make_shared<TimerScheduler>(10);
-  ThreadPool pool{1,timer_scheduler};
+  ThreadPool pool{1, timer_scheduler};
   for (int i = 0; i < 5; i++) {
     pool.SubmitEvery(
       [&val]() {
@@ -88,8 +88,7 @@ TEST(ThreadPoolTest, test_every) {
   }
   LOG_TRACE("{}", val.load());
 
-
-  ThreadPool pool2{1,timer_scheduler};
+  ThreadPool pool2{1, timer_scheduler};
   for (int i = 0; i < 5; i++) {
     pool2.SubmitEvery(
       [&val]() {

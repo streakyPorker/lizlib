@@ -52,7 +52,7 @@ class Socket : public File {
   [[nodiscard]] InetAddress GetLocalAddress() const;
   [[nodiscard]] InetAddress GetPeerAddress() const;
 
-  void Shutdown(bool close_read = true);
+  void Shutdown(bool close_read);
 
   [[nodiscard]] std::string String() const override { return fmt::format("[Socket{}]", fd_); }
 
