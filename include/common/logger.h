@@ -5,10 +5,12 @@
 
 #include <fmt/format.h>
 #include <iostream>
+#include "common/basic.h"
 
 namespace lizlib {
 enum class Level { kTrace, kDebug, kInfo, kWarn, kError, kDisable };
 extern Level log_level;
+class Timestamp;
 
 #ifdef USE_SPDLOG
 #include <spdlog/spdlog.h>
