@@ -6,7 +6,7 @@
 #define LIZLIB_TCP_CONNECTION_H
 #include "common/basic.h"
 #include "common/buffer.h"
-#include "common/concurrent/thread_pool.h"
+#include "concurrent/thread_pool.h"
 #include "net/channel/socket_channel.h"
 namespace lizlib {
 class TcpConnection;

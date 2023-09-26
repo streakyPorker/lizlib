@@ -5,7 +5,7 @@
 #ifndef LIZLIB_EVENT_LOOP_H
 #define LIZLIB_EVENT_LOOP_H
 
-#include "common/concurrent/thread_pool.h"
+#include "concurrent/thread_pool.h"
 #include "net/selector/selector.h"
 namespace lizlib {
 

@@ -11,8 +11,7 @@ void lizlib::TcpConnection::Start() {
   channel_->OnError([this](auto events, auto now) { handleError(channel_->GetError()); });
 
   // where to get selector
-  channel_->SetSelector();
-
+  //  channel_->SetSelector();
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
   ssize_t n = input_.Append(&channel_->GetFile());

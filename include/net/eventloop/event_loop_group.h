@@ -5,7 +5,7 @@
 #ifndef LIZLIB_EVENT_LOOP_GROUP_H
 #define LIZLIB_EVENT_LOOP_GROUP_H
 
-#include "common/concurrent/thread_pool.h"
+#include "concurrent/thread_pool.h"
 namespace lizlib {
 class EventLoopGroup final : public Executor {
  public:
