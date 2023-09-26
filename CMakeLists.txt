@@ -22,10 +22,10 @@ add_definitions(-DFMT_HEADER_ONLY)
 target_link_libraries(lizlib PUBLIC fmt pthread uring)
 
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR BUILD_TESTS)
-    option(BUILD_TESTS "build tests" ON)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR LIZLIB_BUILD_TESTS)
+    option(LIZLIB_BUILD_TESTS "build tests" ON)
 else ()
-    option(BUILD_TESTS "build tests" OFF)
+    option(LIZLIB_BUILD_TESTS "build tests" OFF)
 endif ()
 if (BUILD_TESTS)
     include(cmakes/gtest.cmake)
