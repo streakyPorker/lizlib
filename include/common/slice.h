@@ -7,28 +7,39 @@ class Slice {
  public:
   Slice() = default;
 
-  Slice(void* data, size_t length)
-      : data_(static_cast<char*>(data)), length_(length) {}
+  Slice(void* data, size_t length) : data_(static_cast<char*>(data)), length_(length) {}
 
-  Slice(const void* data, size_t length)
-      : data_((char*)data), length_(length) {}
+  Slice(const void* data, size_t length) : data_((char*)data), length_(length) {}
 
   Slice(const Slice& cpy) = default;
 
-  Slice(const std::string& str)
-      : data_(const_cast<char*>(str.data())), length_(str.size()) {}
+  Slice(const std::string& str) : data_(const_cast<char*>(str.data())), length_(str.size()) {}
 
-  Slice(const char* str)
-      : data_(const_cast<char*>(str)), length_(::strlen(str)) {}
+  Slice(const char* str) : data_(const_cast<char*>(str)), length_(::strlen(str)) {}
 
-  Slice(std::string&& str)
-      : data_(const_cast<char*>(str.data())), length_(str.size()) {
+  Slice(std::string&& str) : data_(const_cast<char*>(str.data())), length_(str.size()) {
     str.assign(nullptr);
     str.resize(0);
   }
 
-  Slice(Slice&& mv) noexcept : data_(mv.data_), length_(mv.length_) {
-    mv.Clear();
+  Slice(Slice&& mv) noexcept : data_(mv.data_), length_(mv.length_) { mv.Clear(); }
+
+  Slice& operator=(const Slice& adder) {
+    if (&adder != this) {
+      this->data_ = adder.data_;
+      this->length_ = adder.length_;
+    }
+    return *this;
+  }
+
+  Slice& operator=(Slice&& adder) noexcept {
+    if (&adder != this) {
+      this->data_ = adder.data_;
+      this->length_ = adder.length_;
+      adder.data_ = nullptr;
+      adder.length_ = 0;
+    }
+    return *this;
   }
 
   [[nodiscard]] inline char* Data() const { return data_; }
