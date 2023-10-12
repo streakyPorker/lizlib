@@ -201,7 +201,7 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
     return Duration{usecs_ - other.usecs_};
   }
   Duration operator-(const ConcurrentTimestamp& other) const noexcept {
-    return Duration{usecs_ - other.usecs_};
+    return operator-(other.Get());
   }
 
   void Incr(const Duration& d) {
@@ -225,11 +225,6 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
       modified = prev - d.usec_;
     }
   }
-
-  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs_ + d.usec_}; }
-
-  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs_ - d.usec_}; }
-
   [[nodiscard]] std::string String() const noexcept {
     time_t msecs = usecs_ / kUsecPerMsec;
     time_t tmp_usec = usecs_ % kUsecPerMsec;
