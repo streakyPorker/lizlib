@@ -11,7 +11,7 @@ class Buffer : public Slice {
   using Deleter = void (*)(void*);
   Buffer() = default;
   explicit Buffer(size_t length, bool aligned = true)
-      : Buffer(aligned ? ::aligned_alloc(kPageSize, length) : malloc(length), length, free) {
+      : Buffer(aligned ? ::aligned_alloc(config::kPageSize, length) : malloc(length), length, free) {
     aligned_ = aligned;
   }
   Buffer(const Buffer& cpy) = default;

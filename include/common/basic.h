@@ -73,7 +73,7 @@ static uint64_t Rdtsc() {
 
 #define LIZ_ESCAPABLE_MEM(ptr, size)                   \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
-  if (size <= kStackAllocMaximum) { /*on stack*/       \
+  if (size <= config::kStackAllocMaximum) { /*on stack*/       \
     ptr = static_cast<decltype(ptr)>(::alloca(size));  \
   } else { /*on heap*/                                 \
     ptr = static_cast<decltype(ptr)>(::malloc(size));  \
@@ -85,11 +85,11 @@ static uint64_t Rdtsc() {
 
 namespace lizlib {
 inline char* ceil_page_align_addr(void* ptr) {
-  return reinterpret_cast<char*>(((uint64_t)ptr + kPageSize) & (~(kPageSize - 1)));
+  return reinterpret_cast<char*>(((uint64_t)ptr + config::kPageSize) & (~(config::kPageSize - 1)));
 }
 
 inline char* floor_page_align_addr(void* ptr) {
-  return reinterpret_cast<char*>((uint64_t)ptr & (~(kPageSize - 1)));
+  return reinterpret_cast<char*>((uint64_t)ptr & (~(config::kPageSize - 1)));
 }
 
 struct MallocDeleter {
@@ -184,9 +184,9 @@ struct Timestamp : public Comparable<Timestamp> {
   Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs_ - d.usec_}; }
 
   [[nodiscard]] std::string String() const noexcept {
-    time_t msecs = usecs_ / kUsecPerMsec;
-    time_t tmp_usec = usecs_ % kUsecPerMsec;
-    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
+    time_t secs = usecs_ / kUsecPerSec;
+    time_t tmp_usec = usecs_ % kUsecPerSec;
+    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(secs), tmp_usec);
   };
 };
 
@@ -202,7 +202,7 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
     return ConcurrentTimestamp{tv.tv_usec + tv.tv_sec * kUsecPerSec};
   };
   static int Compare(const ConcurrentTimestamp& p, const ConcurrentTimestamp& q) noexcept {
-    return p.usecs_ == q.usecs_ ? 0 : p.usecs_ < q.usecs_ ? -1 : 1;
+    return Timestamp::Compare(p.Get(), q.Get());
   }
 
   [[nodiscard]] Timestamp Get() const {
@@ -239,8 +239,8 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
     }
   }
   [[nodiscard]] std::string String() const noexcept {
-    time_t msecs = usecs_ / kUsecPerMsec;
-    time_t tmp_usec = usecs_ % kUsecPerMsec;
+    time_t msecs = usecs_ / kUsecPerSec;
+    time_t tmp_usec = usecs_ % kUsecPerSec;
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };

@@ -31,7 +31,7 @@ bool lizlib::Buffer::ensureWritable(size_t require, bool capped, bool drop_read_
   auto new_length = capped ? used + require : nextPowOfTwo(length_, used + require);
   char* new_data;
   if (aligned_) {
-    new_data = static_cast<char*>(::aligned_alloc(kPageSize, new_length));
+    new_data = static_cast<char*>(::aligned_alloc(config::kPageSize, new_length));
     assert(deleter_);
     if (new_data && data_) {
       ::memmove(new_data, data_, length_);
@@ -74,17 +74,17 @@ ssize_t lizlib::Buffer::Append(const File* file, bool capped, bool drop_read_byt
     return ret;
   }
   ssize_t left = file_size - page_remain;
-  ssize_t splits = (left / kFileRWUnit) + 1;
-  ssize_t mod = left % kFileRWUnit;
+  ssize_t splits = (left / config::kFileRWUnit) + 1;
+  ssize_t mod = left % config::kFileRWUnit;
   Slice slices[splits + 1];
   slices[0].Data(WPtr());
   slices[0].Length(page_remain);
   for (int i = 0; i < splits; ++i) {
-    slices[i + 1].Data(next_page + i * kFileRWUnit);
+    slices[i + 1].Data(next_page + i * config::kFileRWUnit);
     if (i == splits - 1) {
       slices[i + 1].Length(mod);
     } else {
-      slices[i + 1].Length(kFileRWUnit);
+      slices[i + 1].Length(config::kFileRWUnit);
     }
   }
   ret = file->Readv(slices, splits + 1);
@@ -127,16 +127,16 @@ ssize_t lizlib::Buffer::Read(lizlib::File* file, ssize_t size) {
     return ret;
   }
   ssize_t left = size - page_remain;
-  ssize_t splits = (left / kFileRWUnit) + 1;
-  ssize_t mod = left % kFileRWUnit;
+  ssize_t splits = (left / config::kFileRWUnit) + 1;
+  ssize_t mod = left % config::kFileRWUnit;
   Slice* slices;
   LIZ_ESCAPABLE_MEM(slices, sizeof(slices) * (splits + 1));
   for (int i = 0; i < splits; ++i) {
-    slices[i + 1].Data(next_page + i * kFileRWUnit);
+    slices[i + 1].Data(next_page + i * config::kFileRWUnit);
     if (i == splits - 1) {
       slices[i + 1].Length(mod);
     } else {
-      slices[i + 1].Length(kFileRWUnit);
+      slices[i + 1].Length(config::kFileRWUnit);
     }
   }
   ret = file->Writev(slices, splits + 1);
