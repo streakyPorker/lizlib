@@ -24,3 +24,15 @@ TEST(BasicTest, stackAllocTest) {
   LIZ_ESCAPABLE_MEM(intptr1, 100);
   LIZ_ESCAPABLE_MEM(intptr2, 100000);
 }
+
+
+TEST(BasicTest, ctsTest) {
+  ConcurrentTimestamp cts{Timestamp::Now()};
+  using namespace std::chrono_literals;
+  fmt::println("{}",cts);
+  cts.Incr(1min);
+  fmt::println("{} {}",cts,Timestamp::Now());
+  fmt::println("{}",Rdtsc());
+  fmt::println("{}",Rdtsc());
+  fmt::println("{}",Rdtsc());
+}

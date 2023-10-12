@@ -64,6 +64,13 @@
 #define LIZ_SFENSE() asm volatile("sfence" ::: "memory")
 #define LIZ_MFENSE() asm volatile("mfence" ::: "memory")
 
+static uint64_t Rdtsc() {
+  uint64_t rax;
+  uint64_t rdx;
+  asm volatile("rdtsc" : "=a"(rax), "=d"(rdx));
+  return (rdx << 32) | rax;
+}
+
 #define LIZ_ESCAPABLE_MEM(ptr, size)                   \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
   if (size <= kStackAllocMaximum) { /*on stack*/       \
@@ -188,6 +195,12 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
 
   ConcurrentTimestamp() = default;
   explicit ConcurrentTimestamp(int64_t usecs) : usecs_(usecs) {}
+  explicit ConcurrentTimestamp(const Timestamp& ts) : usecs_(ts.usecs_) {}
+  static ConcurrentTimestamp Now() {
+    struct timeval tv {};
+    ::gettimeofday(&tv, nullptr);
+    return ConcurrentTimestamp{tv.tv_usec + tv.tv_sec * kUsecPerSec};
+  };
   static int Compare(const ConcurrentTimestamp& p, const ConcurrentTimestamp& q) noexcept {
     return p.usecs_ == q.usecs_ ? 0 : p.usecs_ < q.usecs_ ? -1 : 1;
   }
