@@ -182,19 +182,7 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
 
   ConcurrentTimestamp() = default;
   explicit ConcurrentTimestamp(int64_t usecs) : usecs(usecs) {}
-
-  static Timestamp Now() {
-    struct timeval tv {};
-
-    ::gettimeofday(&tv, nullptr);
-    return Timestamp{tv.tv_usec + tv.tv_sec * kUsecPerSec};
-  };
-
-  static Timestamp Max() { return Timestamp{std::numeric_limits<int64_t>::max()}; }
-
-  static Timestamp Min() { return Timestamp{0}; }
-
-  static int Compare(const Timestamp& p, const Timestamp& q) noexcept {
+  static int Compare(const ConcurrentTimestamp& p, const ConcurrentTimestamp& q) noexcept {
     return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
   }
 
