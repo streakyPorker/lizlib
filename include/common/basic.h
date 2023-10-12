@@ -177,8 +177,53 @@ struct Timestamp : public Comparable<Timestamp> {
   };
 };
 
+struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
+  volatile int64_t usecs{};
+
+  ConcurrentTimestamp() = default;
+  explicit ConcurrentTimestamp(int64_t usecs) : usecs(usecs) {}
+
+  static Timestamp Now() {
+    struct timeval tv {};
+
+    ::gettimeofday(&tv, nullptr);
+    return Timestamp{tv.tv_usec + tv.tv_sec * kUsecPerSec};
+  };
+
+  static Timestamp Max() { return Timestamp{std::numeric_limits<int64_t>::max()}; }
+
+  static Timestamp Min() { return Timestamp{0}; }
+
+  static int Compare(const Timestamp& p, const Timestamp& q) noexcept {
+    return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
+  }
+
+  [[nodiscard]] Timestamp Get() const {
+    Timestamp read{usecs};
+    return read;
+  }
+
+  Duration operator-(const Timestamp& other) const noexcept {
+    return Duration{usecs - other.usecs};
+  }
+  Duration operator-(const ConcurrentTimestamp& other) const noexcept {
+    return Duration{usecs - other.usecs};
+  }
+
+  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs + d.usecs}; }
+
+  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs - d.usecs}; }
+
+  [[nodiscard]] std::string String() const noexcept {
+    time_t msecs = usecs / kUsecPerMsec;
+    time_t tmp_usec = usecs % kUsecPerMsec;
+    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
+  };
+};
+
 }  // namespace lizlib
 
 LIZ_FORMATTER_REGISTRY(lizlib::Timestamp);
+LIZ_FORMATTER_REGISTRY(lizlib::ConcurrentTimestamp);
 
 #endif  //LIZLIB_BASIC_H
