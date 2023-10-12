@@ -13,7 +13,7 @@ namespace lizlib {
 
 class Channel {
  public:
-  virtual const File& GetFile() = 0;
+  virtual File& GetFile() = 0;
   virtual void HandleEvents(ReceiveEvents events, Timestamp now) = 0;
   [[nodiscard]] virtual std::string String() const = 0;
   virtual ~Channel() = default;

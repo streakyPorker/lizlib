@@ -71,13 +71,13 @@ static uint64_t Rdtsc() {
   return (rdx << 32) | rax;
 }
 
-#define LIZ_ESCAPABLE_MEM(ptr, size)                   \
-  std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
-  if (size <= config::kStackAllocMaximum) { /*on stack*/       \
-    ptr = static_cast<decltype(ptr)>(::alloca(size));  \
-  } else { /*on heap*/                                 \
-    ptr = static_cast<decltype(ptr)>(::malloc(size));  \
-    __cleaner##ptr.reset((char*)ptr);                  \
+#define LIZ_ESCAPABLE_MEM(ptr, size)                     \
+  std::unique_ptr<char, MallocDeleter> __cleaner##ptr;   \
+  if (size <= config::kStackAllocMaximum) { /*on stack*/ \
+    ptr = static_cast<decltype(ptr)>(::alloca(size));    \
+  } else { /*on heap*/                                   \
+    ptr = static_cast<decltype(ptr)>(::malloc(size));    \
+    __cleaner##ptr.reset((char*)ptr);                    \
   }
 
 #define LIZ_CLAIM_SHARED_PTR(type) using Ptr = std::shared_ptr<type>
@@ -111,7 +111,11 @@ struct Comparable {
 
 struct Duration : Comparable<Duration> {
   int64_t usec_{-1};
-  static Duration Invalid() { return Duration{}; }
+  static Duration Invalid() { return Duration{-1}; }
+  static Duration Zero() { return Duration{0}; }
+  static Duration FromSecs(int64_t seconds) { return Duration{seconds * 1'000'000}; }
+  static Duration FromMilliSecs(int64_t millis) { return Duration{millis * 1'000}; }
+  static Duration FromMicroSecs(int64_t micros) { return Duration{micros}; }
 
   template <typename Rep, typename Period>
   Duration(std::chrono::duration<Rep, Period> other)

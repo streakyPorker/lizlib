@@ -11,11 +11,13 @@
 namespace lizlib {
 class EpollSelector final : public Selector {
  public:
+  LIZ_CLAIM_SHARED_PTR(EpollSelector);
   explicit EpollSelector(size_t buf_size) : fd_{createEpollFd()}, epoll_events_{buf_size} {}
   void Add(Channel* channel, SelectEvents events) override;
   void Remove(Channel* channel) override;
   void Update(Channel* channel, SelectEvents events) override;
   Status Wait(Duration timeout, SelectChannels* selected) override;
+  size_t Size() override;
 
   [[nodiscard]] std::string String() const noexcept {
     return fmt::format("EpollSelector[fd={},size={}]", fd_, epoll_events_.size());

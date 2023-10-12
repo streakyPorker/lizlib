@@ -22,7 +22,7 @@ class EventChannel final : public Channel {
   EventChannel() : Channel(), file_(createEventFile()) {}
   ~EventChannel() override = default;
 
-  const File& GetFile() override { return file_; }
+  File& GetFile() override { return file_; }
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
 

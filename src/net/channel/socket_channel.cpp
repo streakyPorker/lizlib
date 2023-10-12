@@ -4,7 +4,7 @@
 
 #include "net/channel/socket_channel.h"
 #include <sys/epoll.h>
-const lizlib::File& lizlib::SocketChannel::GetFile() {
+lizlib::File& lizlib::SocketChannel::GetFile() {
   return *this;
 }
 void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {

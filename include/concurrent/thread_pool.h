@@ -11,6 +11,7 @@
 #include "common/basic.h"
 #include "common/logger.h"
 #include "net/channel/timer_channel.h"
+#include "net/config.h"
 #include "net/selector/epoll_selector.h"
 
 namespace lizlib {
@@ -21,7 +22,7 @@ class Executor {
   LIZ_DISABLE_COPY_AND_MOVE(Executor);
   virtual void Submit(const Runnable& runnable) = 0;
   virtual void Join() = 0;
-  virtual size_t Size() const noexcept = 0;
+  [[nodiscard]] virtual size_t Size() const noexcept = 0;
   virtual void SubmitDelay(const Runnable& runnable, Duration delay) = 0;
   virtual void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) = 0;
 
@@ -54,7 +55,6 @@ struct Worker {
 };
 
 class TimerScheduler {
-
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TimerScheduler);
   LIZ_CLAIM_SHARED_PTR(TimerScheduler);
@@ -78,7 +78,9 @@ class TimerScheduler {
   void timerWorkerRoutine() {
     using namespace std::chrono_literals;
     while (!cancel_signal_.load(std::memory_order_relaxed)) {
-      Status rst = epoll_selector_.Wait(1s, &results_);
+
+      Status rst =
+        epoll_selector_.Wait(Duration::FromMilliSecs(config::kSelectTimeoutMilliSecs), &results_);
       if (!rst.OK()) {
         LOG_FATAL("epoll wait failed : {}", rst);
       }
@@ -105,7 +107,7 @@ class ThreadPool final : public Executor {
 
   ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) {}
 
-  explicit ThreadPool(uint32_t core_thread, std::shared_ptr<TimerScheduler> time_worker = nullptr);
+  explicit ThreadPool(uint32_t core_thread, TimerScheduler::Ptr time_worker = nullptr);
 
   ~ThreadPool() { Join(); }
 
@@ -144,7 +146,7 @@ class ThreadPool final : public Executor {
   std::deque<Worker> workers_;
   std::atomic_bool cancel_signal_{false};
 
-  std::shared_ptr<TimerScheduler> timer_scheduler_;
+  TimerScheduler::Ptr timer_scheduler_;
   bool own_timer_scheduler_{false};
 };
 

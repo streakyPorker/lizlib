@@ -20,14 +20,15 @@ struct SelectChannels {
     for (int i = 0; i < Size(); i++) {
       channels[i]->HandleEvents(events[i], occur_ts);
     }
-//    channels.clear();
-//    events.clear();
+    //    channels.clear();
+    //    events.clear();
   }
 };
 
 class Selector {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(Selector);
+  LIZ_CLAIM_SHARED_PTR(Selector);
   virtual void Add(Channel* channel, SelectEvents events) = 0;
   virtual void Remove(Channel* channel) = 0;
   virtual void Update(Channel* channel, SelectEvents events) = 0;
@@ -38,6 +39,7 @@ class Selector {
    * @return
    */
   virtual Status Wait(Duration timeout, SelectChannels* selected) = 0;
+  virtual size_t Size() = 0;
   Selector() = default;
   virtual ~Selector() = default;
 };

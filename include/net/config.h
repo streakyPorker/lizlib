@@ -13,7 +13,7 @@ struct TcpOption {
   bool tcp_no_delay = true;
 };
 static TcpOption kTcpOption{};
-static Duration kSelectTimeout{std::chrono::seconds(5)};
+
 
 }  // namespace lizlib
 #endif  //LIZLIB_NET_CONFIG_H

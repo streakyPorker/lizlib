@@ -43,7 +43,7 @@ class SocketChannel final : public Socket, Channel {
 
   void OnError(SelectorCallback error_callback) { error_callback_ = std::move(error_callback); }
 
-  const File& GetFile() override;
+  File& GetFile() override;
 
   /**
    * Get error code from socket, different from mere file

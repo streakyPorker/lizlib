@@ -15,10 +15,11 @@ void lizlib::EpollSelector::Update(lizlib::Channel* channel, lizlib::SelectEvent
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
                                            lizlib::SelectChannels* selected) {
-  int count = ::epoll_wait(fd_, epoll_events_.data(), (int)epoll_events_.size(),
-                            (int)timeout.MilliSec());
+  int count =
+    ::epoll_wait(fd_, epoll_events_.data(), (int)epoll_events_.size(), (int)timeout.MilliSec());
   if (count < 0) {
     LOG_WARN("{}'s epoll_wait turns out abnormal", *this);
+    epoll_events_.clear();
     return Status::FromErr();
   }
   selected->occur_ts = Timestamp::Now();
@@ -40,4 +41,7 @@ void lizlib::EpollSelector::internalUpdate(lizlib::Channel* channel, int epoll_o
   ASSERT_FATAL(
     ::epoll_ctl(fd_, epoll_op, update_fd, epoll_op == EPOLL_CTL_DEL ? nullptr : &update_event) >= 0,
     "{} asd {}", *this, Status::FromErr());
+}
+size_t lizlib::EpollSelector::Size() {
+  return epoll_events_.size();
 }

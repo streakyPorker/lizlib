@@ -36,6 +36,9 @@ void lizlib::ThreadPool::Join() {
       }
     }
     //  timer worker will join itself
+    if (own_timer_scheduler_) {
+      timer_scheduler_->Join();
+    }
     LOG_TRACE("thread_pool({}) joined", core_threads_);
   }
 }
