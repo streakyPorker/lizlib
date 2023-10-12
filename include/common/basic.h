@@ -58,6 +58,12 @@
 
 #define NON_EXPLICIT
 
+#define LIZ_PAUSE() asm volatile("pause")
+#define LIZ_BARRIER() asm volatile("" ::: "memory")
+#define LIZ_LFENSE() asm volatile("lfence" ::: "memory")
+#define LIZ_SFENSE() asm volatile("sfence" ::: "memory")
+#define LIZ_MFENSE() asm volatile("mfence" ::: "memory")
+
 #define LIZ_ESCAPABLE_MEM(ptr, size)                   \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr; \
   if (size <= kStackAllocMaximum) { /*on stack*/       \
@@ -97,43 +103,43 @@ struct Comparable {
 };
 
 struct Duration : Comparable<Duration> {
-  int64_t usecs{-1};
+  int64_t usec_{-1};
   static Duration Invalid() { return Duration{}; }
 
   template <typename Rep, typename Period>
   Duration(std::chrono::duration<Rep, Period> other)
-      : usecs(std::chrono::duration_cast<std::chrono::microseconds>(other).count()) {}
+      : usec_(std::chrono::duration_cast<std::chrono::microseconds>(other).count()) {}
 
-  explicit Duration(int64_t usecs_diff) : usecs(usecs_diff) {}
+  explicit Duration(int64_t usecs_diff) : usec_(usecs_diff) {}
 
   static int Compare(const Duration& p, const Duration& q) noexcept {
-    return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
+    return p.usec_ == q.usec_ ? 0 : p.usec_ < q.usec_ ? -1 : 1;
   }
 
   Duration(const Duration& other) = default;
   Duration& operator=(const Duration& other) noexcept {
-    usecs = other.usecs;
+    usec_ = other.usec_;
     return *this;
   }
-  Duration(Duration&& other) noexcept { std::swap(usecs, other.usecs); };
+  Duration(Duration&& other) noexcept { std::swap(usec_, other.usec_); };
   Duration& operator=(Duration&& other) noexcept {
-    std::swap(usecs, other.usecs);
+    std::swap(usec_, other.usec_);
     return *this;
   }
 
-  [[nodiscard]] inline bool Valid() const noexcept { return usecs >= 0; }
+  [[nodiscard]] inline bool Valid() const noexcept { return usec_ >= 0; }
 
   [[nodiscard]] inline std::chrono::microseconds MicroSec() const noexcept {
-    return std::chrono::microseconds(usecs);
+    return std::chrono::microseconds(usec_);
   };
-  [[nodiscard]] inline int64_t MilliSec() const noexcept { return Valid() ? usecs / 1000L : -1; };
-  [[nodiscard]] inline int64_t Sec() const noexcept { return Valid() ? usecs / 1000000 : -1L; };
+  [[nodiscard]] inline int64_t MilliSec() const noexcept { return Valid() ? usec_ / 1000L : -1; };
+  [[nodiscard]] inline int64_t Sec() const noexcept { return Valid() ? usec_ / 1000000 : -1L; };
 
   [[nodiscard]] inline int64_t MicrosBelowMilli() const noexcept {
-    return Valid() ? usecs % 1000L : -1;
+    return Valid() ? usec_ % 1000L : -1;
   };
   [[nodiscard]] inline int64_t MicrosBelowSec() const noexcept {
-    return Valid() ? usecs % 1000000L : -1;
+    return Valid() ? usec_ % 1000000L : -1;
   };
 
  private:
@@ -141,10 +147,10 @@ struct Duration : Comparable<Duration> {
 };
 
 struct Timestamp : public Comparable<Timestamp> {
-  int64_t usecs{};
+  int64_t usecs_{};
 
   Timestamp() = default;
-  explicit Timestamp(int64_t usecs) : usecs(usecs) {}
+  explicit Timestamp(int64_t usecs) : usecs_(usecs) {}
 
   static Timestamp Now() {
     struct timeval tv {};
@@ -158,53 +164,75 @@ struct Timestamp : public Comparable<Timestamp> {
   static Timestamp Min() { return Timestamp{0}; }
 
   static int Compare(const Timestamp& p, const Timestamp& q) noexcept {
-    return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
+    return p.usecs_ == q.usecs_ ? 0 : p.usecs_ < q.usecs_ ? -1 : 1;
   }
 
   Duration operator-(const Timestamp& other) const noexcept {
 
-    return Duration{usecs - other.usecs};
+    return Duration{usecs_ - other.usecs_};
   }
 
-  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs + d.usecs}; }
+  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs_ + d.usec_}; }
 
-  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs - d.usecs}; }
+  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs_ - d.usec_}; }
 
   [[nodiscard]] std::string String() const noexcept {
-    time_t msecs = usecs / kUsecPerMsec;
-    time_t tmp_usec = usecs % kUsecPerMsec;
+    time_t msecs = usecs_ / kUsecPerMsec;
+    time_t tmp_usec = usecs_ % kUsecPerMsec;
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };
 
 struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
-  volatile int64_t usecs{};
+  volatile int64_t usecs_{};
 
   ConcurrentTimestamp() = default;
-  explicit ConcurrentTimestamp(int64_t usecs) : usecs(usecs) {}
+  explicit ConcurrentTimestamp(int64_t usecs) : usecs_(usecs) {}
   static int Compare(const ConcurrentTimestamp& p, const ConcurrentTimestamp& q) noexcept {
-    return p.usecs == q.usecs ? 0 : p.usecs < q.usecs ? -1 : 1;
+    return p.usecs_ == q.usecs_ ? 0 : p.usecs_ < q.usecs_ ? -1 : 1;
   }
 
   [[nodiscard]] Timestamp Get() const {
-    Timestamp read{usecs};
+    Timestamp read{usecs_};
     return read;
   }
 
   Duration operator-(const Timestamp& other) const noexcept {
-    return Duration{usecs - other.usecs};
+    return Duration{usecs_ - other.usecs_};
   }
   Duration operator-(const ConcurrentTimestamp& other) const noexcept {
-    return Duration{usecs - other.usecs};
+    return Duration{usecs_ - other.usecs_};
   }
 
-  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs + d.usecs}; }
+  void Incr(const Duration& d) {
+    uint64_t prev = usecs_;
+    uint64_t modified = prev + d.usec_;
+    uint64_t rst;
+    while ((rst = __sync_val_compare_and_swap(&usecs_, prev, modified)) != prev) {
+      LIZ_PAUSE();
+      prev = rst;
+      modified = prev + d.usec_;
+    }
+  }
 
-  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs - d.usecs}; }
+  void Decr(const Duration& d) {
+    uint64_t prev = usecs_;
+    uint64_t modified = prev - d.usec_;
+    uint64_t rst;
+    while ((rst = __sync_val_compare_and_swap(&usecs_, prev, modified)) != prev) {
+      LIZ_PAUSE();
+      prev = rst;
+      modified = prev - d.usec_;
+    }
+  }
+
+  Timestamp operator+(const Duration& d) const noexcept { return Timestamp{usecs_ + d.usec_}; }
+
+  Timestamp operator-(const Duration& d) const noexcept { return Timestamp{usecs_ - d.usec_}; }
 
   [[nodiscard]] std::string String() const noexcept {
-    time_t msecs = usecs / kUsecPerMsec;
-    time_t tmp_usec = usecs % kUsecPerMsec;
+    time_t msecs = usecs_ / kUsecPerMsec;
+    time_t tmp_usec = usecs_ % kUsecPerMsec;
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };
