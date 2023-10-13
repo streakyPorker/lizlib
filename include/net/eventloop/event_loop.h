@@ -6,7 +6,6 @@
 #define LIZLIB_EVENT_LOOP_H
 
 #include <utility>
-#include "concurrent/event_scheduler.h"
 #include "concurrent/executor.h"
 #include "concurrent/thread_pool.h"
 #include "net/callbacks.h"

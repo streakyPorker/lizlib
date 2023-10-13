@@ -9,10 +9,8 @@
 #include <utility>
 #include "common/basic.h"
 #include "common/logger.h"
-#include "concurrent/event_scheduler.h"
 #include "concurrent/executor.h"
 #include "cond_var.h"
-#include "executor.h"
 #include "net/channel/channel.h"
 #include "net/channel/timer_channel.h"
 #include "net/config.h"
