@@ -29,12 +29,25 @@ void lizlib::ThreadPool::Join() {
   if (!cancel_signal_.load(std::memory_order_relaxed)) {
     cancel_signal_.store(true, std::memory_order_release);
     cv_.notify_all();
+
+    // join the worker
     for (Worker& worker : workers_) {
       // once joined/detached ,the std::thread would not be joinable
       if (worker.thread->joinable()) {
         worker.thread->join();
       }
     }
+
+    {
+      std::lock_guard<std::mutex> guard{global_mu_};
+      while (!active_queue_.empty()) {
+        LOG_TRACE("popping discarded job");
+        Job* abandoned_job = active_queue_.front();
+        delete abandoned_job;// this will do the epoll remove
+        active_queue_.pop_front();
+      }
+    }
+
     //  timer worker will join itself
     if (own_event_scheduler_) {
       event_scheduler_->Join();
@@ -53,11 +66,11 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::Worker* worker) {
         active_queue_.pop_front();
       }
     }
-    if (cur_job != nullptr && cur_job->func != nullptr) {
+
+    if (cur_job != nullptr) {
       cur_job->func();
-      if (cur_job->once && cur_job->bind_channel != nullptr &&
-          ValidFd(cur_job->bind_channel->GetFile().Fd())) {
-        ::close(cur_job->bind_channel->GetFile().Fd());
+      // handle the delayed task, remove it at once
+      if (cur_job->once) {
         delete cur_job;
       }
     } else {
@@ -86,12 +99,21 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
 
     Job* job = new Job{work, !interval.Valid(), &active_queue_, new TimerChannel};
     job->bind_channel->SetCallback([this, job]() {
+      if (cancel_signal_.load(
+            std::memory_order_relaxed)) {  // Join() will do the epoll remove on left jobs
+        return;
+      }
       {
         std::lock_guard<std::mutex> guard{global_mu_};
+        // double check cancel
+        if (cancel_signal_.load(std::memory_order_relaxed)) {
+          return;
+        }
+
         // emplace front to achieve relative fairness
         active_queue_.emplace_front(job);
         if (active_queue_.size() == 1) {
-          wait_cv_.notify_all();
+          cv_.notify_all();
         }
       }
       if (job->once) {
@@ -103,20 +125,12 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
                                           SelectEvents::kReadEvent.EdgeTrigger());
     job->bind_channel->SetTimer(delay, interval);
 
-    //    epoll_event event{};
-    //    event.data.ptr = new Job(work, !interval.Valid(), &active_queue_, timer_fd);
-    //    event.events = EPOLLIN | EPOLLET;
-    //    ASSERT_FATAL(
-    //      ::epoll_ctl(timer_scheduler_->timer_epoll_fd, EPOLL_CTL_ADD, timer_fd, &event) == 0,
-    //      "adding timer to epoll failed");
-    //    ASSERT_FATAL(timerfd_settime(timer_fd, 0, &timer_spec, nullptr) == 0,
-    //                 "initializing timer failed");
   } else {
     // emplace queue
     std::lock_guard<std::mutex> guard{global_mu_};
     active_queue_.emplace_back(new Job{work, true, &active_queue_, nullptr});
     if (active_queue_.size() == 1) {
-      wait_cv_.notify_all();
+      cv_.notify_all();
     }
   }
 }

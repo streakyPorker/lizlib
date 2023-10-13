@@ -11,9 +11,11 @@ class TimerChannel final : public Channel {
  public:
   LIZ_CLAIM_SHARED_PTR(TimerChannel);
   explicit TimerChannel(Callback callback = nullptr, Executor* executor = nullptr)
-      : callback_(std::move(callback)), file_(std::forward<File>(createTimerFile())) {}
+      : callback_(std::move(callback)),
+        file_(std::forward<File>(createTimerFile())),
+        executor_{executor} {}
 
-  ~TimerChannel() override = default;
+  ~TimerChannel() override { LOG_TRACE("~TimerChannel"); };
   File& GetFile() override;
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;

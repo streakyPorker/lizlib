@@ -32,6 +32,7 @@
     };                                                                                  \
   }
 
+
 #define LIZ_DISABLE_MOVE(T) \
   T(T&&) noexcept = delete; \
   T& operator=(T&&) noexcept = delete

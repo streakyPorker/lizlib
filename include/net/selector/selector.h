@@ -6,8 +6,8 @@
 #define LIZLIB_SELECTOR_H
 
 namespace lizlib {
-#include "net/channel/channel.h"
 #include "common/basic.h"
+#include "net/channel/channel.h"
 struct SelectChannels {
   Timestamp occur_ts;
   std::vector<Channel*> channels;
@@ -21,8 +21,7 @@ struct SelectChannels {
         channels[i]->HandleEvents(events[i], occur_ts);
       } else {
         channels[i]->GetExecutor()->Submit(
-          [this, i]() { channels[i]->HandleEvents(events[i], occur_ts); }
-        );
+          [this, i]() { channels[i]->HandleEvents(events[i], occur_ts); });
       }
     }
   }

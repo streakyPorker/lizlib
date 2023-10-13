@@ -31,7 +31,11 @@ struct Job {
   LIZ_DISABLE_COPY(Job);
   Job(Job&& job) = default;
   Job& operator=(Job&& job) noexcept;
-  ~Job() = default;
+  ~Job() {
+    if (bind_channel != nullptr && ValidFd(bind_channel->GetFile().Fd())) {
+      ::close(bind_channel->GetFile().Fd());
+    }
+  };
 };
 
 struct Worker {
@@ -88,7 +92,6 @@ class EventScheduler {
   SelectChannels results_{};
   std::thread thread_;
 };
-
 
 class ThreadPool final : public Executor {
  public:
