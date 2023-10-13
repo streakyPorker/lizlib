@@ -10,11 +10,17 @@ namespace lizlib {
 class TimerChannel final : public Channel {
  public:
   LIZ_CLAIM_SHARED_PTR(TimerChannel);
-  explicit TimerChannel(Callback callback = nullptr)
+  explicit TimerChannel(Callback callback = nullptr, Executor* executor = nullptr)
       : callback_(std::move(callback)), file_(std::forward<File>(createTimerFile())) {}
+
+  ~TimerChannel() override = default;
   File& GetFile() override;
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
+
+  Executor* GetExecutor() override { return executor_; }
+
+  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
 
   void SetCallback(const Callback& callback) noexcept { callback_ = callback; }
 
@@ -24,6 +30,7 @@ class TimerChannel final : public Channel {
   inline static const Duration kMinWakeUpDuration{100};
 
   File file_;
+  Executor* executor_{nullptr};
   Callback callback_;
   static File createTimerFile();
 };

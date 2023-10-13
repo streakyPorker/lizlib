@@ -13,9 +13,9 @@ class EpollSelector final : public Selector {
  public:
   LIZ_CLAIM_SHARED_PTR(EpollSelector);
   explicit EpollSelector(size_t buf_size) : fd_{createEpollFd()}, epoll_events_{buf_size} {}
-  void Add(Channel* channel, SelectEvents events) override;
-  void Remove(Channel* channel) override;
-  void Update(Channel* channel, SelectEvents events) override;
+  void Add(const Channel::Ptr& channel, SelectEvents events) override;
+  void Remove(const Channel::Ptr& channel) override;
+  void Update(const Channel::Ptr& channel, SelectEvents events) override;
   Status Wait(Duration timeout, SelectChannels* selected) override;
   size_t Size() override;
 
@@ -31,7 +31,7 @@ class EpollSelector final : public Selector {
  private:
   int fd_{-1};
   std::vector<struct epoll_event> epoll_events_;
-  void internalUpdate(Channel* channel, int epoll_op, const SelectEvents& select_events);
+  void internalUpdate(Channel*, int epoll_op, const SelectEvents& select_events);
 
   static int createEpollFd() {
     int epoll_fd = ::epoll_create1(EPOLL_CLOEXEC);

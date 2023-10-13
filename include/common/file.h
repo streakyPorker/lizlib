@@ -46,7 +46,7 @@ class File {
 
   ssize_t Preadv(const Slice* bufs, size_t n, uint64_t offset, int flags = 0) const;
 
-  size_t Write(const void* buf, size_t size) noexcept;
+  ssize_t Write(const void* buf, size_t size) noexcept;
 
   ssize_t Writev(Slice* buf, size_t n);
 

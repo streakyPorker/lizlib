@@ -26,6 +26,10 @@ class EventChannel final : public Channel {
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
 
+  Executor* GetExecutor() override { return executor_; }
+
+  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
+
   inline void SetCallback(Callback callback) { callback_ = std::move(callback); }
 
   /**
@@ -36,6 +40,7 @@ class EventChannel final : public Channel {
  private:
   File file_;
   Callback callback_;
+  Executor* executor_{nullptr};
 
  private:
   static File createEventFile(bool non_block = true, bool sync = false);

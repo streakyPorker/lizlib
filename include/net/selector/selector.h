@@ -6,7 +6,9 @@
 #define LIZLIB_SELECTOR_H
 #include "common/basic.h"
 #include "net/channel/channel.h"
+#include "net/channel/timer_channel.h"
 #include "net/event.h"
+#include "net/eventloop/event_loop.h"
 namespace lizlib {
 
 struct SelectChannels {
@@ -20,8 +22,6 @@ struct SelectChannels {
     for (int i = 0; i < Size(); i++) {
       channels[i]->HandleEvents(events[i], occur_ts);
     }
-    //    channels.clear();
-    //    events.clear();
   }
 };
 
@@ -29,9 +29,9 @@ class Selector {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(Selector);
   LIZ_CLAIM_SHARED_PTR(Selector);
-  virtual void Add(Channel* channel, SelectEvents events) = 0;
-  virtual void Remove(Channel* channel) = 0;
-  virtual void Update(Channel* channel, SelectEvents events) = 0;
+  virtual void Add(const Channel::Ptr&, SelectEvents events) = 0;
+  virtual void Remove(const Channel::Ptr&) = 0;
+  virtual void Update(const Channel::Ptr&, SelectEvents events) = 0;
   /**
    * wait for events_
    * @param timeout

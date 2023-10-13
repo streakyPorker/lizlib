@@ -8,13 +8,13 @@
 #include <utility>
 #include "common/status.h"
 #include "net/channel/timer_channel.h"
-lizlib::ThreadPool::ThreadPool(uint32_t core_thread, std::shared_ptr<TimerScheduler> time_worker)
+lizlib::ThreadPool::ThreadPool(uint32_t core_thread, EventScheduler::Ptr time_worker)
     : core_threads_(core_thread),
-      timer_scheduler_{time_worker},
+      event_scheduler_{time_worker},
       cv_(&global_mu_, &wait_cv_, false) {
-  if (timer_scheduler_ == nullptr) {
-    timer_scheduler_ = std::make_shared<TimerScheduler>(core_thread);
-    own_timer_scheduler_ = true;
+  if (event_scheduler_ == nullptr) {
+    event_scheduler_ = std::make_shared<EventScheduler>(core_thread);
+    own_event_scheduler_ = true;
   }
 
   for (int i = 0; i < core_thread; i++) {
@@ -36,8 +36,8 @@ void lizlib::ThreadPool::Join() {
       }
     }
     //  timer worker will join itself
-    if (own_timer_scheduler_) {
-      timer_scheduler_->Join();
+    if (own_event_scheduler_) {
+      event_scheduler_->Join();
     }
     LOG_TRACE("thread_pool({}) joined", core_threads_);
   }
@@ -95,11 +95,11 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
         }
       }
       if (job->once) {
-        timer_scheduler_->epoll_selector_.Remove(job->bind_channel);
+        event_scheduler_->epoll_selector_.Remove(job->bind_channel);
       }
     });
 
-    timer_scheduler_->epoll_selector_.Add(job->bind_channel,
+    event_scheduler_->epoll_selector_.Add(job->bind_channel,
                                           SelectEvents::kReadEvent.EdgeTrigger());
     job->bind_channel->SetTimer(delay, interval);
 

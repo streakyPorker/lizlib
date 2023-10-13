@@ -8,6 +8,7 @@
 #include "common/buffer.h"
 #include "concurrent/thread_pool.h"
 #include "net/channel/socket_channel.h"
+#include "net/eventloop/event_loop.h"
 namespace lizlib {
 class TcpConnection;
 
@@ -58,6 +59,10 @@ class ChannelHandlerAdaptor : public ChannelHandler {
 
 enum class TcpState { kConnected, kDisconnected, kConnecting, kDisconnecting };
 
+/**
+ * use shared_from_this() to retain the TcpConnection object in the EventLoop when itself goes
+ * out of life cycle
+ */
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpConnection);
@@ -65,10 +70,10 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   LIZ_CLAIM_SHARED_PTR(TcpConnection);
 
-  TcpConnection(ThreadPool::Ptr thread_pool, Socket socket)
+  TcpConnection(EventLoop* loop, Socket socket)
       : channel_(std::make_shared<SocketChannel>(std::move(socket))),
         local_addr_(channel_->GetLocalAddress()),
-        executor_(thread_pool),
+        loop_{loop},
         context_(std::make_shared<ChannelContext>()) {}
 
   ~TcpConnection() = default;
@@ -77,7 +82,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   TcpState GetState() const noexcept { return state_; }
 
-  void SetHandler(std::shared_ptr<ChannelHandler> handler) { handler_ = std::move(handler); }
+  void SetHandler(ChannelHandler::Ptr handler) { handler_ = std::move(handler); }
 
   const InetAddress& GetLocalAddress() const noexcept { return local_addr_; }
 
@@ -87,9 +92,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   void Send(Buffer* buf);
 
-  void Send(std::string_view buffer);
+  void Send(const std::string& buffer);
 
-  void Send(std::string buffer);
+  void Send(std::string_view buffer);
 
   /**
  * should check state to see if Close() succeeded
@@ -119,7 +124,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   ChannelContext::Ptr context_;
 
   InetAddress local_addr_;
-  std::shared_ptr<Executor> executor_;
+  EventLoop* loop_;
 };
 }  // namespace lizlib
 

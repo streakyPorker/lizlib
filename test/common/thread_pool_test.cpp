@@ -27,7 +27,7 @@ TEST(ThreadPoolTest, tpt1) {
 
 TEST(ThreadPoolTest, test_multi_pool_single_scheduler) {
   using namespace std::chrono_literals;
-  std::shared_ptr<TimerScheduler> scheduler = std::make_shared<TimerScheduler>(20);
+  std::shared_ptr<EventScheduler> scheduler = std::make_shared<EventScheduler>(20);
   ThreadPool pool1{1, scheduler};
   ThreadPool pool2{1, scheduler};
 
@@ -72,7 +72,7 @@ TEST(ThreadPoolTest, test_every) {
   lizlib::log_level = lizlib::Level::kTrace;
   using namespace std::chrono_literals;
   std::atomic_int64_t val = 0;
-  TimerScheduler::Ptr timer_scheduler = std::make_shared<TimerScheduler>(10);
+  EventScheduler::Ptr timer_scheduler = std::make_shared<EventScheduler>(10);
   ThreadPool pool{1, timer_scheduler};
   for (int i = 0; i < 5; i++) {
     pool.SubmitEvery(

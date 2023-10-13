@@ -64,7 +64,7 @@ TEST(EPOLL_TEST, timefd_test) {
 TEST(EPOLL_TEST, time_channel_test) {
   using namespace std::chrono_literals;
 
-  TimerScheduler timer_scheduler{10};
+  EventScheduler timer_scheduler{10};
   TimerChannel timer_channel{[]() {
     thread_local int v = 0;
     fmt::println("trigger! {}", v++);

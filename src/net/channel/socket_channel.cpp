@@ -9,7 +9,6 @@ lizlib::File& lizlib::SocketChannel::GetFile() {
 }
 void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {
   LOG_TRACE("{} handling events_ {}", *this, events.String());
-
   if (events.ContainsAny(ReceiveEvents::kReadable, ReceiveEvents::kPriorReadable,
                          ReceiveEvents::kReadHangUp) &&
       read_callback_ != nullptr) {
@@ -43,7 +42,7 @@ void lizlib::SocketChannel::SetReadable(bool on) {
     events_.Remove(SelectEvents::kReadEvent);
   }
   if (prev != events_) {
-    selector_->Update(this, events_);
+    selector_->Update(shared_from_this(), events_);
   }
 }
 void lizlib::SocketChannel::SetWritable(bool on) {
@@ -57,7 +56,7 @@ void lizlib::SocketChannel::SetWritable(bool on) {
     events_.Remove(SelectEvents::kWriteEvent);
   }
   if (prev != events_) {
-    selector_->Update(this, events_);
+    selector_->Update(shared_from_this(), events_);
   }
 }
 lizlib::Status lizlib::SocketChannel::GetError() const noexcept {

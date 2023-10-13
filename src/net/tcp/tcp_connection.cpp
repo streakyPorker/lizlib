@@ -9,9 +9,13 @@ void lizlib::TcpConnection::Start() {
   channel_->OnWrite([this](auto events, auto now) { handleWrite(); });
   channel_->OnClose([this](auto events, auto now) { handleClose(); });
   channel_->OnError([this](auto events, auto now) { handleError(channel_->GetError()); });
+  channel_->SetSelector(loop_->GetSelector());
 
-  // where to get selector
-  //  channel_->SetSelector();
+  loop_->AddChannel(channel_, [self = shared_from_this()] {
+    LOG_INFO("handleConnection {}", *self);
+    self->handler_->OnConnect(Timestamp::Now());
+    self->channel_->SetReadable(true);
+  });
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
   ssize_t n = input_.Append(&channel_->GetFile());
@@ -60,8 +64,8 @@ void lizlib::TcpConnection::handleClose() {
   }
   LOG_INFO("{}::handleClose()", *this);
   state_.store(TcpState::kDisconnected, std::memory_order_release);
-  // is it meaningful to do register&remove?
-  executor_->Submit([this]() { handleRemove(); });
+  // at this time, the TcpConnection Object is not dead yet, so use this
+  loop_->Submit([this]() { handleRemove(); });
 }
 
 void lizlib::TcpConnection::handleRemove() {
@@ -82,7 +86,7 @@ void lizlib::TcpConnection::Close() {
   if (!state_.compare_exchange_strong(desired, TcpState::kDisconnected)) {
     return;
   }
-  executor_->Submit([this]() {
+  loop_->Submit([this]() {
     if (output_.ReadableBytes() == 0) {
       handleRemove();
     }
@@ -93,7 +97,7 @@ void lizlib::TcpConnection::Shutdown() {
   if (!state_.compare_exchange_strong(desired, TcpState::kDisconnecting)) {
     return;
   }
-  executor_->Submit([this]() {
+  loop_->Submit([this]() {
     if (output_.ReadableBytes() == 0) {
       LOG_TRACE("{}::Shutdown()", *this);
       channel_->SetWritable(false);
@@ -106,7 +110,7 @@ void lizlib::TcpConnection::ForceShutdown() {
     return;
   }
   state_ = TcpState::kDisconnecting;
-  executor_->Submit([this]() {
+  loop_->Submit([this]() {
     LOG_TRACE("{}::ForceShutdown()", *this);
     channel_->SetWritable(false);
     channel_->Shutdown(false);
@@ -117,5 +121,60 @@ void lizlib::TcpConnection::ForceClose() {
     return;
   }
   state_ = TcpState::kDisconnected;
-  executor_->Submit([this]() { handleRemove(); });
+  loop_->Submit([self = shared_from_this()]() { self->handleRemove(); });
+}
+void lizlib::TcpConnection::Send(lizlib::Buffer* buf) {
+  if (EventLoop::CheckUnderLoop(loop_)) {
+    if (buf == &output_) {
+      if (output_.ReadableBytes()) {
+        channel_->SetWritable(true);
+        handleWrite();
+        buf->Reset();
+      }
+      return;
+    }
+    handleSend({buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())});
+  }
+}
+void lizlib::TcpConnection::Send(const std::string& buffer) {
+  if (EventLoop::CheckUnderLoop(loop_)) {
+    handleSend(buffer);
+    return;
+  }
+  loop_->Submit(
+    [self = shared_from_this(), clone = std::string(buffer)] { self->handleSend(clone); });
+}
+
+void lizlib::TcpConnection::Send(std::string_view buffer) {
+  if (EventLoop::CheckUnderLoop(loop_)) {
+    handleSend(buffer);
+    return;
+  }
+  loop_->Submit(
+    [self = shared_from_this(), clone = std::string(buffer)] { self->handleSend(clone); });
+}
+void lizlib::TcpConnection::handleSend(std::string_view buffer) {
+  if (state_.load(std::memory_order_relaxed) != TcpState::kConnected) {
+    LOG_TRACE("{}::{}: give up sending buffer", *this, __func__)
+    return;
+  }
+  if (buffer.empty()) {
+    return;
+  }
+
+  if (output_.ReadableBytes() == 0) {
+    ssize_t writen_bytes = channel_->Write(buffer.data(), buffer.size());
+    if (writen_bytes < 0) {
+      auto err = Status::FromErr();
+      if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
+        handleError(err);
+      }
+    }
+    buffer = buffer.substr(std::max(0L, writen_bytes));
+  }
+
+  if (!buffer.empty()) {
+    output_.Append(buffer.data(), buffer.size(), false, false);
+    channel_->SetWritable(true);
+  }
 }

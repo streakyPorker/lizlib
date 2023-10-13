@@ -10,38 +10,29 @@
 #include "blockable_barrier.h"
 #include "common/basic.h"
 #include "common/logger.h"
+#include "event_scheduler.h"
+#include "executor.h"
 #include "net/channel/timer_channel.h"
 #include "net/config.h"
 #include "net/selector/epoll_selector.h"
 
 namespace lizlib {
-using Runnable = std::function<void()>;
 
-class Executor {
- public:
-  LIZ_DISABLE_COPY_AND_MOVE(Executor);
-  virtual void Submit(const Runnable& runnable) = 0;
-  virtual void Join() = 0;
-  [[nodiscard]] virtual size_t Size() const noexcept = 0;
-  virtual void SubmitDelay(const Runnable& runnable, Duration delay) = 0;
-  virtual void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) = 0;
-
- protected:
-  Executor() = default;
-};
 
 struct Job {
   Runnable func{nullptr};
   bool once{true};
-  TimerChannel* bind_channel{nullptr};
+  TimerChannel::Ptr bind_channel{nullptr};
   std::deque<Job*>* destination{nullptr};
   Job() = default;
-  Job(Runnable func, bool once, std::deque<Job*>* destination, TimerChannel* binder)
-      : func(std::move(func)), once(once), destination(destination), bind_channel(binder) {}
+  Job(Runnable func, bool once, std::deque<Job*>* destination, TimerChannel* channel)
+      : func(std::move(func)), once(once), destination(destination) {
+    bind_channel.reset(channel);
+  }
   LIZ_DISABLE_COPY(Job);
   Job(Job&& job) = default;
   Job& operator=(Job&& job) noexcept;
-  ~Job() { delete bind_channel; }
+  ~Job() = default;
 };
 
 struct Worker {
@@ -54,60 +45,15 @@ struct Worker {
   Worker& operator=(Worker&& worker) noexcept;
 };
 
-class TimerScheduler {
- public:
-  LIZ_DISABLE_COPY_AND_MOVE(TimerScheduler);
-  LIZ_CLAIM_SHARED_PTR(TimerScheduler);
-  friend class ThreadPool;
-  explicit TimerScheduler(uint32_t event_buf_size)
-      : thread_{[this]() {
-          this->timerWorkerRoutine();
-        }},
-        epoll_selector_(event_buf_size) {}
-
-  void Join() {
-    if (!cancel_signal_.load(std::memory_order_relaxed)) {
-      cancel_signal_.store(true, std::memory_order_release);
-      if (thread_.joinable()) {
-        thread_.join();
-      }
-      LOG_TRACE("timer scheduler joined");
-    }
-  }
-
-  void timerWorkerRoutine() {
-    using namespace std::chrono_literals;
-    while (!cancel_signal_.load(std::memory_order_relaxed)) {
-
-      Status rst =
-        epoll_selector_.Wait(Duration::FromMilliSecs(config::kSelectTimeoutMilliSecs), &results_);
-      if (!rst.OK()) {
-        LOG_FATAL("epoll wait failed : {}", rst);
-      }
-      if (results_.events.empty()) {
-        continue;
-      }
-      results_.Process();
-    }
-  };
-  ~TimerScheduler() { Join(); }
-
- public:
-  EpollSelector epoll_selector_;
-  SelectChannels results_{};
-  std::thread thread_;
-  std::atomic_bool cancel_signal_{false};
-};
-
 class ThreadPool final : public Executor {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(ThreadPool);
   LIZ_CLAIM_SHARED_PTR(ThreadPool);
-  friend struct TimerScheduler;
+  friend struct EventScheduler;
 
   ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) {}
 
-  explicit ThreadPool(uint32_t core_thread, TimerScheduler::Ptr time_worker = nullptr);
+  explicit ThreadPool(uint32_t core_thread, EventScheduler::Ptr time_worker = nullptr);
 
   ~ThreadPool() { Join(); }
 
@@ -131,7 +77,7 @@ class ThreadPool final : public Executor {
 
   [[nodiscard]] size_t Size() const noexcept override { return core_threads_; }
 
-  [[nodiscard]] TimerScheduler::Ptr GetTimerScheduler() const noexcept { return timer_scheduler_; }
+  [[nodiscard]] EventScheduler::Ptr GetEventScheduler() const noexcept { return event_scheduler_; }
 
  private:
   void enqueueTask(const Runnable& work, Duration delay, Duration interval);
@@ -146,8 +92,8 @@ class ThreadPool final : public Executor {
   std::deque<Worker> workers_;
   std::atomic_bool cancel_signal_{false};
 
-  TimerScheduler::Ptr timer_scheduler_;
-  bool own_timer_scheduler_{false};
+  EventScheduler::Ptr event_scheduler_;
+  bool own_event_scheduler_{false};
 };
 
 }  // namespace lizlib

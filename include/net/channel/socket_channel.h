@@ -9,16 +9,16 @@
 #include "net/selector/selector.h"
 #include "net/tcp/socket.h"
 namespace lizlib {
-class SocketChannel final : public Socket, Channel {
+class SocketChannel final : public Socket,
+                            public Channel,
+                            public std::enable_shared_from_this<SocketChannel> {
  public:
   LIZ_CLAIM_SHARED_PTR(SocketChannel);
   explicit SocketChannel(Socket&& socket) : Socket(std::move(socket)) {}
   SocketChannel(Socket socket, Selector* selector)
       : Socket(std::move(socket)), selector_(selector) {}
   ~SocketChannel() override = default;
-
   void SetSelector(Selector* aSelector) { selector_ = aSelector; }
-
   /**
    * will perform updates on selector_ if needed
    * @param on
@@ -63,6 +63,10 @@ class SocketChannel final : public Socket, Channel {
 
   [[nodiscard]] std::string String() const override;
 
+  Executor* GetExecutor() override { return executor_; }
+
+  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
+
  private:
   SelectEvents events_{SelectEvents::kNoneEvent};
   SelectorCallback close_callback_{nullptr};
@@ -70,6 +74,7 @@ class SocketChannel final : public Socket, Channel {
   SelectorCallback error_callback_{nullptr};
   SelectorCallback write_callback_{nullptr};
   Selector* selector_{nullptr};
+  Executor* executor_{nullptr};
 };
 }  // namespace lizlib
 

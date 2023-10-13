@@ -3,15 +3,15 @@
 //
 
 #include "net/selector/epoll_selector.h"
-void lizlib::EpollSelector::Add(lizlib::Channel* channel, lizlib::SelectEvents events) {
-  internalUpdate(channel, EPOLL_CTL_ADD, events);
+void lizlib::EpollSelector::Add(const Channel::Ptr& channel, SelectEvents events) {
+  internalUpdate(channel.get(), EPOLL_CTL_ADD, events);
 }
 
-void lizlib::EpollSelector::Remove(lizlib::Channel* channel) {
-  internalUpdate(channel, EPOLL_CTL_DEL, SelectEvents::kNoneEvent);
+void lizlib::EpollSelector::Remove(const Channel::Ptr& channel) {
+  internalUpdate(channel.get(), EPOLL_CTL_DEL, SelectEvents::kNoneEvent);
 }
-void lizlib::EpollSelector::Update(lizlib::Channel* channel, lizlib::SelectEvents events) {
-  internalUpdate(channel, EPOLL_CTL_MOD, events);
+void lizlib::EpollSelector::Update(const Channel::Ptr& channel, lizlib::SelectEvents events) {
+  internalUpdate(channel.get(), EPOLL_CTL_MOD, events);
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
                                            lizlib::SelectChannels* selected) {
@@ -40,7 +40,7 @@ void lizlib::EpollSelector::internalUpdate(lizlib::Channel* channel, int epoll_o
   int update_fd = channel->GetFile().Fd();
   ASSERT_FATAL(
     ::epoll_ctl(fd_, epoll_op, update_fd, epoll_op == EPOLL_CTL_DEL ? nullptr : &update_event) >= 0,
-    "{} asd {}", *this, Status::FromErr());
+    "{} updating epoll event failed : {}", *this, Status::FromErr());
 }
 size_t lizlib::EpollSelector::Size() {
   return epoll_events_.size();

@@ -23,7 +23,7 @@ TEST(EventLoopTest, basic_dummy_test) {
   {
     EventLoop loop{};
     //  TimerScheduler::Ptr ts = loop.GetTimeScheduler();
-    loop.Submit([&loop]() { ASSERT_FATAL(EventLoop::GetEventLoop() == &loop, "failed to bind"); });
+    loop.Submit([&loop]() { ASSERT_FATAL(EventLoop::Current() == &loop, "failed to bind"); });
     loop.Submit([]() {
       fmt::println("here 1");
       std::cout.flush();

@@ -90,8 +90,8 @@ class SelectEvents final : public Events {
     return (events_ & EPOLLET) == 0 ? SelectTrigger::kHorizon : SelectTrigger::kEdge;
   };
 
-  SelectEvents EdgeTrigger() const noexcept;
-  SelectEvents HorizonTrigger() const noexcept;
+  [[nodiscard]] SelectEvents EdgeTrigger() const noexcept;
+  [[nodiscard]] SelectEvents HorizonTrigger() const noexcept;
 
   [[nodiscard]] std::string String() const noexcept override {
     char buf[3]{};

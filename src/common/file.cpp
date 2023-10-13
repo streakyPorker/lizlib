@@ -78,7 +78,7 @@ ssize_t lizlib::File::Pwritev(lizlib::Slice* bufs, size_t n, uint64_t offset, in
   }
   return ::pwritev64v2(fd_, blocks, n, offset, flags);
 }
-size_t lizlib::File::Write(const void* buf, size_t size) noexcept {
+ssize_t lizlib::File::Write(const void* buf, size_t size) noexcept {
   return ::write(fd_, buf, size);
 }
 lizlib::Status lizlib::File::Remove(const char* name) {
