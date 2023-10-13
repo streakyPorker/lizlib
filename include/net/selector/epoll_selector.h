@@ -7,6 +7,7 @@
 
 #include <sys/epoll.h>
 #include "common/file.h"
+#include "net/channel/channel.h"
 #include "selector.h"
 namespace lizlib {
 class EpollSelector final : public Selector {

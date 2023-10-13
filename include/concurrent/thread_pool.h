@@ -14,6 +14,7 @@
 #include "net/channel/channel.h"
 #include "net/channel/timer_channel.h"
 #include "net/config.h"
+#include "net/selector/epoll_selector.h"
 
 namespace lizlib {
 using Runnable = std::function<void()>;

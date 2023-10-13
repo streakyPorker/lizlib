@@ -65,14 +65,14 @@ TEST(EPOLL_TEST, time_channel_test) {
   using namespace std::chrono_literals;
 
   EventScheduler timer_scheduler{10};
-  TimerChannel timer_channel{[]() {
+  TimerChannel::Ptr timer_channel = std::make_shared<TimerChannel>([]() {
     thread_local int v = 0;
     fmt::println("trigger! {}", v++);
     std::cout.flush();
-  }};
+  });
   SelectChannels select_channels;
-  timer_scheduler.epoll_selector_.Add(&timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
-  timer_channel.SetTimer(1s, 0.5s);
+  timer_scheduler.epoll_selector_.Add(timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
+  timer_channel->SetTimer(1s, 0.5s);
   std::this_thread::sleep_for(10s);
 
   fmt::println("here");
