@@ -4,13 +4,10 @@
 
 #ifndef LIZLIB_SELECTOR_H
 #define LIZLIB_SELECTOR_H
-#include "common/basic.h"
-#include "net/channel/channel.h"
-#include "net/channel/timer_channel.h"
-#include "net/event.h"
-#include "net/eventloop/event_loop.h"
-namespace lizlib {
 
+namespace lizlib {
+#include "net/channel/channel.h"
+#include "common/basic.h"
 struct SelectChannels {
   Timestamp occur_ts;
   std::vector<Channel*> channels;
@@ -20,7 +17,13 @@ struct SelectChannels {
 
   void Process() {
     for (int i = 0; i < Size(); i++) {
-      channels[i]->HandleEvents(events[i], occur_ts);
+      if (channels[i]->GetExecutor() == nullptr) {
+        channels[i]->HandleEvents(events[i], occur_ts);
+      } else {
+        channels[i]->GetExecutor()->Submit(
+          [this, i]() { channels[i]->HandleEvents(events[i], occur_ts); }
+        );
+      }
     }
   }
 };

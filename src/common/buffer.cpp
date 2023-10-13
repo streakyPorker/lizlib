@@ -63,7 +63,7 @@ ssize_t lizlib::Buffer::Append(const File* file, bool capped, bool drop_read_byt
   ifUnlikely(!ensureWritable(file_size, capped, drop_read_bytes)) {
     return -1;
   }
-  char* next_page = ceil_page_align_addr(WPtr());
+  char* next_page = CeilPageAlignAddr(WPtr());
   ssize_t page_remain = next_page - WPtr();
   // fits the remain page
   if (file_size <= page_remain) {
@@ -117,7 +117,7 @@ ssize_t lizlib::Buffer::Read(lizlib::File* file, ssize_t size) {
     size = std::min(size, (ssize_t)ReadableBytes());
   }
 
-  char* next_page = ceil_page_align_addr(RPtr());
+  char* next_page = CeilPageAlignAddr(RPtr());
   ssize_t page_remain = next_page - WPtr();
   if (size <= page_remain) {
     ret = file->Write(RPtr(), size);

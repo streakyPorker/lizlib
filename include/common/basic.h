@@ -64,13 +64,6 @@
 #define LIZ_SFENSE() asm volatile("sfence" ::: "memory")
 #define LIZ_MFENSE() asm volatile("mfence" ::: "memory")
 
-static uint64_t Rdtsc() {
-  uint64_t rax;
-  uint64_t rdx;
-  asm volatile("rdtsc" : "=a"(rax), "=d"(rdx));
-  return (rdx << 32) | rax;
-}
-
 #define LIZ_ESCAPABLE_MEM(ptr, size)                     \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr;   \
   if (size <= config::kStackAllocMaximum) { /*on stack*/ \
@@ -85,11 +78,19 @@ static uint64_t Rdtsc() {
 #define LIZ_CLAIM_UNIQUE_PTR(type) using UniPtr = std::unique_ptr<type>
 
 namespace lizlib {
-inline char* ceil_page_align_addr(void* ptr) {
+
+static uint64_t Rdtsc() {
+  uint64_t rax;
+  uint64_t rdx;
+  asm volatile("rdtsc" : "=a"(rax), "=d"(rdx));
+  return (rdx << 32) | rax;
+}
+
+inline char* CeilPageAlignAddr(void* ptr) {
   return reinterpret_cast<char*>(((uint64_t)ptr + config::kPageSize) & (~(config::kPageSize - 1)));
 }
 
-inline char* floor_page_align_addr(void* ptr) {
+inline char* FloorPageAlignAddr(void* ptr) {
   return reinterpret_cast<char*>((uint64_t)ptr & (~(config::kPageSize - 1)));
 }
 

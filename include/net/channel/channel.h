@@ -6,9 +6,9 @@
 #define LIZLIB_CHANNEL_H
 #include "common/basic.h"
 #include "common/file.h"
-#include "concurrent/thread_pool.h"
 #include "net/callbacks.h"
 #include "net/event.h"
+#include "concurrent/executor.h"
 
 namespace lizlib {
 

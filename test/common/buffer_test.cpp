@@ -39,8 +39,8 @@ TEST(BufferTest, buffertest1) {
 TEST(BufferTest, buffertest2) {
   char asd[100];
   fmt::println("{}", asd + 99 - asd);
-  fmt::println("{} {} {}", (void*)ceil_page_align_addr(asd),
-               (void*)floor_page_align_addr(asd), (void*)asd);
+  fmt::println("{} {} {}", (void*)CeilPageAlignAddr(asd),
+               (void*)FloorPageAlignAddr(asd), (void*)asd);
 }
 
 TEST(BufferTest, bufferfiletwtest) {

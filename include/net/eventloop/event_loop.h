@@ -6,10 +6,12 @@
 #define LIZLIB_EVENT_LOOP_H
 
 #include <utility>
-
+#include "concurrent/event_scheduler.h"
+#include "concurrent/executor.h"
 #include "concurrent/thread_pool.h"
-#include "net/channel/event_channel.h"
+#include "net/callbacks.h"
 #include "net/selector/selector.h"
+
 namespace lizlib {
 
 class EventLoop : public Executor {
@@ -21,10 +23,7 @@ class EventLoop : public Executor {
 
   EventLoop() : EventLoop(nullptr) {}
 
-  explicit EventLoop(const EventScheduler::Ptr& scheduler) : pool_{1, scheduler} {
-    LOG_TRACE("EventLoop Created");
-    pool_.Submit([this]() { current() = this; });
-  }
+  explicit EventLoop(const EventScheduler::Ptr& scheduler);
 
   EventLoop(EventLoop&& other) noexcept : EventLoop(other.GetTimeScheduler()) {}
 
@@ -37,37 +36,18 @@ class EventLoop : public Executor {
     Schedule(std::forward<Runnable>(runnable));
   }
 
-  Selector* GetSelector() noexcept { return &pool_.GetEventScheduler()->epoll_selector_; }
-  EventScheduler::Ptr GetTimeScheduler() { return pool_.GetEventScheduler(); };
+  Selector* GetSelector() noexcept;
+  EventScheduler::Ptr GetTimeScheduler();;
+
   void Submit(const Runnable& runnable) override;
   void Join() override;
   [[nodiscard]] inline size_t Size() const noexcept override { return 1; }
   void SubmitDelay(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
-  void AddChannel(const Channel::Ptr& channel, const Callback& cb) {
-    LOG_TRACE("EventLoop::AddChannel({})", *channel);
-    if (current() != this) {
-      Submit([&]() mutable { AddChannel(channel, cb); });
-    } else {
-      GetSelector()->Add(channel, SelectEvents::kNoneEvent);
-      if (cb) {
-        cb();
-      }
-    }
-  }
+  void AddChannel(const Channel::Ptr& channel, const Callback& cb);
 
-  void RemoveChannel(const Channel::Ptr& channel, const Callback& cb) {
-    LOG_TRACE("EventLoop::RemoveChannel({})", *channel);
-    if (current() != this) {
-      Submit([&]() mutable { RemoveChannel(channel, cb); });
-    } else {
-      GetSelector()->Remove(channel);
-      if (cb) {
-        cb();
-      }
-    }
-  }
+  void RemoveChannel(const Channel::Ptr& channel, const Callback& cb);
 
   ~EventLoop() { pool_.Join(); }
 
