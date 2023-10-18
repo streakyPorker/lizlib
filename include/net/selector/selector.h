@@ -8,25 +8,7 @@
 namespace lizlib {
 #include "common/basic.h"
 #include "net/channel/channel.h"
-#include "net/eventloop/event_loop.h"
-struct SelectedChannels {
-  Timestamp occur_ts;
-  std::vector<Channel*> channels;
-  std::vector<ReceiveEvents> events;
-
-  [[nodiscard]] size_t Size() const { return channels.size(); };
-
-  void Process() {
-    for (int i = 0; i < Size(); i++) {
-      Executor* executor = channels[i]->GetExecutor();
-      if (executor == nullptr || EventLoop::Current() == executor) {
-        channels[i]->HandleEvents(events[i], occur_ts);
-      } else {
-        executor->Submit([this, i]() { channels[i]->HandleEvents(events[i], occur_ts); });
-      }
-    }
-  }
-};
+class SelectedChannels;
 
 class Selector {
  public:
@@ -47,5 +29,23 @@ class Selector {
   virtual ~Selector() = default;
 };
 
+struct SelectedChannels {
+  Timestamp occur_ts;
+  std::vector<Channel*> channels;
+  std::vector<ReceiveEvents> events;
+
+  [[nodiscard]] size_t Size() const { return channels.size(); };
+
+  void Process() {
+    for (int i = 0; i < Size(); i++) {
+      Executor* executor = channels[i]->GetExecutor();
+      if (executor == nullptr) {
+        channels[i]->HandleEvents(events[i], occur_ts);
+      } else {
+        executor->Submit([this, i]() { channels[i]->HandleEvents(events[i], occur_ts); });
+      }
+    }
+  }
+};
 }  // namespace lizlib
 #endif  //LIZLIB_SELECTOR_H

@@ -15,14 +15,13 @@ class Timestamp;
 #ifdef USE_SPDLOG
 #include <spdlog/spdlog.h>
 #else
-#define LOG_TRACE(...)                                                                   \
-  do {                                                                                   \
-    if (log_level <= Level::kTrace) {                                                    \
-      fmt::print( "[TRACE] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), \
-                 __LINE__);                                                              \
-      fmt::println( __VA_ARGS__);                                               \
-      std::cout.flush();                                                                 \
-    }                                                                                    \
+#define LOG_TRACE(...)                                                                    \
+  do {                                                                                    \
+    if (log_level <= Level::kTrace) {                                                     \
+      fmt::print("[TRACE] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), __LINE__); \
+      fmt::println(__VA_ARGS__);                                                          \
+      std::cout.flush();                                                                  \
+    }                                                                                     \
   } while (0);
 
 #define ASSERT_TRACE(expr, ...) \

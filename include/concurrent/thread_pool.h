@@ -52,36 +52,11 @@ class EventScheduler {
   LIZ_DISABLE_COPY_AND_MOVE(EventScheduler);
   LIZ_CLAIM_SHARED_PTR(EventScheduler);
   friend class ThreadPool;
-  explicit EventScheduler(uint32_t event_buf_size)
-      : thread_{[this]() {
-          this->schedulerWorkerRoutine();
-        }},
-        epoll_selector_(event_buf_size) {}
+  explicit EventScheduler(uint32_t event_buf_size);
+  void Join();
 
-  void Join() {
-    if (!cancel_signal_.load(std::memory_order_relaxed)) {
-      cancel_signal_.store(true, std::memory_order_release);
-      if (thread_.joinable()) {
-        thread_.join();
-      }
-      LOG_TRACE("timer scheduler joined");
-    }
-  }
+  void schedulerWorkerRoutine();
 
-  void schedulerWorkerRoutine() {
-    using namespace std::chrono_literals;
-    while (!cancel_signal_.load(std::memory_order_relaxed)) {
-      Status rst =
-        epoll_selector_.Wait(Duration::FromMilliSecs(config::kSelectTimeoutMilliSecs), &results_);
-      if (!rst.OK()) {
-        LOG_FATAL("epoll wait failed : {}", rst);
-      }
-      if (results_.events.empty()) {
-        continue;
-      }
-      results_.Process();
-    }
-  };
   ~EventScheduler() { Join(); }
 
  public:

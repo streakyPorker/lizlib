@@ -8,6 +8,7 @@
 #include <utility>
 #include "common/status.h"
 #include "net/channel/timer_channel.h"
+
 lizlib::ThreadPool::ThreadPool(uint32_t core_thread, EventScheduler::Ptr time_worker)
     : core_threads_(core_thread),
       event_scheduler_{time_worker},
@@ -43,7 +44,10 @@ void lizlib::ThreadPool::Join() {
       while (!active_queue_.empty()) {
         LOG_TRACE("popping discarded job");
         Job* abandoned_job = active_queue_.front();
-        delete abandoned_job;// this will do the epoll remove
+        if (abandoned_job->bind_channel != nullptr) {
+          event_scheduler_->epoll_selector_.Remove(abandoned_job->bind_channel);
+        }
+        delete abandoned_job;  // this will do the epoll remove
         active_queue_.pop_front();
       }
     }
@@ -99,28 +103,28 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
 
     Job* job = new Job{work, !interval.Valid(), &active_queue_, new TimerChannel};
     job->bind_channel->SetCallback([this, job]() {
-      if (cancel_signal_.load(
-            std::memory_order_relaxed)) {  // Join() will do the epoll remove on left jobs
-        return;
-      }
-      {
-        std::lock_guard<std::mutex> guard{global_mu_};
-        // double check cancel
-        if (cancel_signal_.load(std::memory_order_relaxed)) {
-          return;
-        }
-
-        // emplace front to achieve relative fairness
-        active_queue_.emplace_front(job);
-        if (active_queue_.size() == 1) {
-          cv_.notify_all();
-        }
-      }
+      //      if (cancel_signal_.load(
+      //            std::memory_order_relaxed)) {  // Join() will do the epoll remove on left jobs
+      //        return;
+      //      }
+      //      {
+      //        std::lock_guard<std::mutex> guard{global_mu_};
+      //        // double check cancel
+      //        if (cancel_signal_.load(std::memory_order_relaxed)) {
+      //          return;
+      //        }
+      //
+      //        // emplace front to achieve relative fairness
+      //        active_queue_.emplace_front(job);
+      //        if (active_queue_.size() == 1) {
+      //          cv_.notify_all();
+      //        }
+      //      }
       if (job->once) {
         event_scheduler_->epoll_selector_.Remove(job->bind_channel);
       }
+      job->func();
     });
-
     event_scheduler_->epoll_selector_.Add(job->bind_channel,
                                           SelectEvents::kReadEvent.EdgeTrigger());
     job->bind_channel->SetTimer(delay, interval);
@@ -147,3 +151,31 @@ lizlib::Job& lizlib::Job::operator=(lizlib::Job&& job) noexcept {
   std::swap(destination, job.destination);
   return *this;
 }
+void lizlib::EventScheduler::schedulerWorkerRoutine() {
+  using namespace std::chrono_literals;
+  while (!cancel_signal_.load(std::memory_order_relaxed)) {
+    Status rst =
+      epoll_selector_.Wait(Duration::FromMilliSecs(config::kSelectTimeoutMilliSecs), &results_);
+    if (!rst.OK()) {
+      LOG_FATAL("epoll wait failed : {}", rst);
+    }
+    if (results_.events.empty()) {
+      continue;
+    }
+    results_.Process();
+  }
+}
+void lizlib::EventScheduler::Join() {
+  if (!cancel_signal_.load(std::memory_order_relaxed)) {
+    cancel_signal_.store(true, std::memory_order_release);
+    if (thread_.joinable()) {
+      thread_.join();
+    }
+    LOG_TRACE("timer scheduler joined");
+  }
+}
+lizlib::EventScheduler::EventScheduler(uint32_t event_buf_size)
+    : thread_{[this]() {
+        this->schedulerWorkerRoutine();
+      }},
+      epoll_selector_(event_buf_size) {}

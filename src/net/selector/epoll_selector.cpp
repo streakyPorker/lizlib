@@ -14,7 +14,7 @@ void lizlib::EpollSelector::Update(const Channel::Ptr& channel, lizlib::SelectEv
   internalUpdate(channel.get(), EPOLL_CTL_MOD, events);
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
-                                           lizlib::SelectChannels* selected) {
+                                           lizlib::SelectedChannels* selected) {
   int count =
     ::epoll_wait(fd_, epoll_events_.data(), (int)epoll_events_.size(), (int)timeout.MilliSec());
   if (count < 0) {
