@@ -22,7 +22,7 @@ class TimerChannel final : public Channel {
 
   Executor* GetExecutor() override { return executor_; }
 
-  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
+  void SetExecutor(Executor* executor) noexcept override { executor_ = executor; }
 
   void SetCallback(const Callback& callback) noexcept { callback_ = callback; }
 

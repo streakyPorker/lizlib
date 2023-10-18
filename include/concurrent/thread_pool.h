@@ -89,7 +89,7 @@ class EventScheduler {
 
  private:
   std::atomic_bool cancel_signal_{false};
-  SelectChannels results_{};
+  SelectedChannels results_{};
   std::thread thread_;
 };
 

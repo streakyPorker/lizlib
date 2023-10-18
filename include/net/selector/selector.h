@@ -8,7 +8,8 @@
 namespace lizlib {
 #include "common/basic.h"
 #include "net/channel/channel.h"
-struct SelectChannels {
+#include "net/eventloop/event_loop.h"
+struct SelectedChannels {
   Timestamp occur_ts;
   std::vector<Channel*> channels;
   std::vector<ReceiveEvents> events;
@@ -17,11 +18,11 @@ struct SelectChannels {
 
   void Process() {
     for (int i = 0; i < Size(); i++) {
-      if (channels[i]->GetExecutor() == nullptr) {
+      Executor* executor = channels[i]->GetExecutor();
+      if (executor == nullptr || EventLoop::Current() == executor) {
         channels[i]->HandleEvents(events[i], occur_ts);
       } else {
-        channels[i]->GetExecutor()->Submit(
-          [this, i]() { channels[i]->HandleEvents(events[i], occur_ts); });
+        executor->Submit([this, i]() { channels[i]->HandleEvents(events[i], occur_ts); });
       }
     }
   }
@@ -40,7 +41,7 @@ class Selector {
    * @param selected [out] the epolled events_
    * @return
    */
-  virtual Status Wait(Duration timeout, SelectChannels* selected) = 0;
+  virtual Status Wait(Duration timeout, SelectedChannels* selected) = 0;
   virtual size_t Size() = 0;
   Selector() = default;
   virtual ~Selector() = default;

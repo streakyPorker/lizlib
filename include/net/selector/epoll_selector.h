@@ -8,7 +8,7 @@
 #include <sys/epoll.h>
 #include "common/file.h"
 #include "net/channel/channel.h"
-#include "selector.h"
+#include "net/selector/selector.h"
 namespace lizlib {
 class EpollSelector final : public Selector {
  public:
@@ -17,7 +17,7 @@ class EpollSelector final : public Selector {
   void Add(const Channel::Ptr& channel, SelectEvents events) override;
   void Remove(const Channel::Ptr& channel) override;
   void Update(const Channel::Ptr& channel, SelectEvents events) override;
-  Status Wait(Duration timeout, SelectChannels* selected) override;
+  Status Wait(Duration timeout, SelectedChannels* selected) override;
   size_t Size() override;
 
   [[nodiscard]] std::string String() const noexcept {

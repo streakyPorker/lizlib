@@ -70,7 +70,7 @@ TEST(EPOLL_TEST, time_channel_test) {
     fmt::println("trigger! {}", v++);
     std::cout.flush();
   });
-  SelectChannels select_channels;
+  SelectedChannels select_channels;
   timer_scheduler.epoll_selector_.Add(timer_channel, SelectEvents::kReadEvent.EdgeTrigger());
   timer_channel->SetTimer(1s, 0.5s);
   std::this_thread::sleep_for(10s);

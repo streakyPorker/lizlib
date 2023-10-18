@@ -28,7 +28,7 @@ class EventChannel final : public Channel {
 
   Executor* GetExecutor() override { return executor_; }
 
-  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
+  void SetExecutor(Executor* executor) noexcept override { executor_ = executor; }
 
   inline void SetCallback(Callback callback) { callback_ = std::move(callback); }
 
