@@ -21,24 +21,30 @@ void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Du
   pool_.SubmitEvery(runnable, delay, interval);
 }
 void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
-                                      const lizlib::Callback& cb) {
+                                      const lizlib::Callback& cb, bool unbind_executor) {
   LOG_TRACE("EventLoop::RemoveChannel({})", *channel);
   if (current() != this) {
     Submit([&]() mutable { RemoveChannel(channel, cb); });
   } else {
     GetSelector()->Remove(channel);
+    if (unbind_executor) {
+      channel->SetExecutor(nullptr);
+    }
     if (cb) {
       cb();
     }
   }
 }
-void lizlib::EventLoop::AddChannel(const lizlib::Channel::Ptr& channel,
-                                   const lizlib::Callback& cb) {
+void lizlib::EventLoop::AddChannel(const lizlib::Channel::Ptr& channel, const lizlib::Callback& cb,
+                                   bool bind_executor) {
   LOG_TRACE("EventLoop::AddChannel({})", *channel);
   if (current() != this) {
     Submit([&]() mutable { AddChannel(channel, cb); });
   } else {
     GetSelector()->Add(channel, lizlib::SelectEvents::kNoneEvent);
+    if (bind_executor) {
+      channel->SetExecutor(this);
+    }
     if (cb) {
       cb();
     }
@@ -51,6 +57,6 @@ lizlib::EventLoop::EventLoop(const lizlib::EventScheduler::Ptr& scheduler) : poo
 lizlib::Selector* lizlib::EventLoop::GetSelector() noexcept {
   return &pool_.GetEventScheduler()->epoll_selector_;
 }
-lizlib::EventScheduler::Ptr lizlib::EventLoop::GetTimeScheduler() {
+lizlib::EventScheduler::Ptr lizlib::EventLoop::getTimeScheduler() {
   return pool_.GetEventScheduler();
 }

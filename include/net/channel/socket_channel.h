@@ -64,7 +64,7 @@ class SocketChannel final : public Socket,
 
   Executor* GetExecutor() override { return executor_; }
 
-  void SetExecutor(Executor* executor) noexcept { executor_ = executor; }
+  void SetExecutor(Executor* executor) noexcept override { executor_ = executor; }
 
  private:
   SelectEvents events_{SelectEvents::kNoneEvent};

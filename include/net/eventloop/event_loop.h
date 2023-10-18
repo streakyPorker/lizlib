@@ -24,19 +24,18 @@ class EventLoop : public Executor {
 
   explicit EventLoop(const EventScheduler::Ptr& scheduler);
 
-  EventLoop(EventLoop&& other) noexcept : EventLoop(other.GetTimeScheduler()) {}
+  EventLoop(EventLoop&& other) noexcept : EventLoop(other.getTimeScheduler()) {}
 
-  template <typename Runnable>
-  void Run(Runnable&& runnable) {
-    if (current() == this) {
-      runnable();
-      return;
-    }
-    Schedule(std::forward<Runnable>(runnable));
-  }
+  //  template <typename Runnable>
+  //  void Run(Runnable&& runnable) {
+  //    if (current() == this) {
+  //      runnable();
+  //      return;
+  //    }
+  //    Schedule(std::forward<Runnable>(runnable));
+  //  }
 
   Selector* GetSelector() noexcept;
-  EventScheduler::Ptr GetTimeScheduler();;
 
   void Submit(const Runnable& runnable) override;
   void Join() override;
@@ -44,9 +43,9 @@ class EventLoop : public Executor {
   void SubmitDelay(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
-  void AddChannel(const Channel::Ptr& channel, const Callback& cb);
+  void AddChannel(const Channel::Ptr& channel, const Callback& cb, bool bind_executor = true);
 
-  void RemoveChannel(const Channel::Ptr& channel, const Callback& cb);
+  void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 
   ~EventLoop() { pool_.Join(); }
 
@@ -56,6 +55,7 @@ class EventLoop : public Executor {
     return current;
   }
   ThreadPool pool_;
+  EventScheduler::Ptr getTimeScheduler();
 };
 }  // namespace lizlib
 

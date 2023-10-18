@@ -12,6 +12,6 @@ using namespace lizlib;
 
 TEST(EngTest, t1) {
   fmt::println("{}", __FILE__);
-  fmt::println("{}", std::filesystem::current_path().c_str());
-  config_loader::LoadConfig("/root/codebase/cxx/lizlib/config/config.ini");
+  //  fmt::println("{}", std::filesystem::current_path().c_str());
+  //  config_loader::LoadConfig("/root/codebase/cxx/lizlib/config/config.ini");
 }
