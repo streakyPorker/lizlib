@@ -14,9 +14,8 @@ class SocketChannel final : public Socket,
                             public std::enable_shared_from_this<SocketChannel> {
  public:
   LIZ_CLAIM_SHARED_PTR(SocketChannel);
-  explicit SocketChannel(Socket&& socket) : Socket(std::move(socket)) {}
-  SocketChannel(Socket socket, Selector* selector)
-      : Socket(std::move(socket)), selector_(selector) {}
+  explicit SocketChannel(Socket socket, Selector* selector = nullptr, Executor* executor = nullptr)
+      : Socket(std::move(socket)), selector_(selector), executor_(executor) {}
   ~SocketChannel() override = default;
   void SetSelector(Selector* aSelector) { selector_ = aSelector; }
   /**

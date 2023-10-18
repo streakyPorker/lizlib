@@ -8,6 +8,7 @@
 namespace lizlib {
 #include "common/basic.h"
 #include "net/channel/channel.h"
+#include "net/eventloop/event_loop.h"
 struct SelectChannels {
   Timestamp occur_ts;
   std::vector<Channel*> channels;
@@ -17,7 +18,8 @@ struct SelectChannels {
 
   void Process() {
     for (int i = 0; i < Size(); i++) {
-      if (channels[i]->GetExecutor() == nullptr) {
+      Executor* executor = channels[i]->GetExecutor();
+      if (executor == nullptr || executor == EventLoop::Current()) {
         channels[i]->HandleEvents(events[i], occur_ts);
       } else {
         channels[i]->GetExecutor()->Submit(

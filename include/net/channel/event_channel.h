@@ -18,8 +18,10 @@ namespace lizlib {
 class EventChannel final : public Channel {
  public:
   LIZ_CLAIM_SHARED_PTR(EventChannel);
-  EventChannel(bool non_block, bool sync) : Channel(), file_(createEventFile(non_block, sync)) {}
-  EventChannel() : Channel(), file_(createEventFile()) {}
+  EventChannel(bool non_block, bool sync, Executor* executor = nullptr)
+      : executor_(executor), Channel(), file_(createEventFile(non_block, sync)) {}
+  explicit EventChannel(Executor* executor = nullptr)
+      : Channel(), file_(createEventFile()), executor_(executor) {}
   ~EventChannel() override = default;
 
   File& GetFile() override { return file_; }

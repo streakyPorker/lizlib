@@ -11,6 +11,8 @@ void lizlib::TcpConnection::Start() {
   channel_->OnError([this](auto events, auto now) { handleError(channel_->GetError()); });
   channel_->SetSelector(loop_->GetSelector());
 
+  // set to redirect the callback tasks to the executor, rather than run it in the epoll thread
+  channel_->SetExecutor(loop_);
   loop_->AddChannel(channel_, [self = shared_from_this()] {
     LOG_INFO("handleConnection {}", *self);
     self->handler_->OnConnect(Timestamp::Now());

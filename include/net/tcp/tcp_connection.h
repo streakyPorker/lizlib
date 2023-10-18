@@ -9,6 +9,7 @@
 #include "concurrent/thread_pool.h"
 #include "net/channel/socket_channel.h"
 #include "net/eventloop/event_loop.h"
+
 namespace lizlib {
 class TcpConnection;
 
@@ -74,7 +75,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
       : channel_(std::make_shared<SocketChannel>(std::move(socket))),
         local_addr_(channel_->GetLocalAddress()),
         loop_{loop},
-        context_(std::make_shared<ChannelContext>()) {}
+        context_(std::make_shared<ChannelContext>()) {
+    ASSERT_FATAL(loop != nullptr, "invalid eventloop detected");
+  }
 
   ~TcpConnection() = default;
 
