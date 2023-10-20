@@ -19,7 +19,7 @@ class Acceptor {
   LIZ_DISABLE_COPY_AND_MOVE(Acceptor);
   LIZ_CLAIM_SHARED_PTR(Acceptor);
 
-  Acceptor(EventLoop& eventloop, const InetAddress& address);
+  Acceptor(EventLoop* eventloop, const InetAddress& address);
 
   ~Acceptor() { Close(); }
 
@@ -39,8 +39,8 @@ class Acceptor {
   AcceptorCallback acceptor_callback_;
   InetAddress address_;
   SocketChannel::Ptr channel_;
-  EventLoop* event_loop_;
+  EventLoop* eventloop_{nullptr};
 };
 }  // namespace lizlib
-
+LIZ_FORMATTER_REGISTRY(lizlib::Acceptor);
 #endif  //LIZLIB_ACCEPTOR_H

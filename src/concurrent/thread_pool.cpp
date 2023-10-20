@@ -29,7 +29,7 @@ lizlib::ThreadPool::ThreadPool(uint32_t core_thread, EventScheduler::Ptr time_wo
 void lizlib::ThreadPool::Join() {
   if (!cancel_signal_.load(std::memory_order_relaxed)) {
     cancel_signal_.store(true, std::memory_order_release);
-    cv_.notify_all();
+    cv_.NotifyAll();
 
     // join the worker
     for (Worker& worker : workers_) {
@@ -78,7 +78,7 @@ void lizlib::ThreadPool::coreWorkerRoutine(lizlib::Worker* worker) {
         delete cur_job;
       }
     } else {
-      cv_.wait();
+      cv_.Wait();
     }
   }
 }
@@ -117,7 +117,7 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
       //        // emplace front to achieve relative fairness
       //        active_queue_.emplace_front(job);
       //        if (active_queue_.size() == 1) {
-      //          cv_.notify_all();
+      //          cv_.NotifyAll();
       //        }
       //      }
       if (job->once) {
@@ -134,7 +134,7 @@ void lizlib::ThreadPool::enqueueTask(const lizlib::Runnable& work, lizlib::Durat
     std::lock_guard<std::mutex> guard{global_mu_};
     active_queue_.emplace_back(new Job{work, true, &active_queue_, nullptr});
     if (active_queue_.size() == 1) {
-      cv_.notify_all();
+      cv_.NotifyAll();
     }
   }
 }

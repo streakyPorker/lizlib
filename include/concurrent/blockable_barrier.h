@@ -37,7 +37,7 @@ class BlockableBarrier {
       cv_->wait(lock);
     } else {
       if (blocker_ != nullptr) {
-        blocker_->wait();
+        blocker_->Wait();
       }
       waiting_ = 0;
       cv_->notify_all();

@@ -23,8 +23,8 @@ lizlib::Socket lizlib::Socket::Create(int domain, bool nonblock, int protocol) {
   }
   int fd = ::socket(domain, socket_type, protocol);
   ifUnlikely(fd < 0) {
-    LOG_ERROR("failed to call ::socket({}, {}, {}), reason[{}]", domain,
-              socket_type, protocol, Status::FromErr());
+    LOG_ERROR("failed to call ::socket({}, {}, {}), reason[{}]", domain, socket_type, protocol,
+              Status::FromErr());
   }
   return Socket{fd};
 }
@@ -45,12 +45,10 @@ lizlib::Status lizlib::Socket::Listen() {
   return Status::Success();
 }
 
-lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote,
-                                      lizlib::Socket* socket) {
+lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote, lizlib::Socket* socket) {
   *remote = std::move(InetAddress());
   socklen_t len;
-  Socket gen =
-    Socket{::accept4(fd_, remote->Data(), &len, SOCK_NONBLOCK | SOCK_CLOEXEC)};
+  Socket gen = Socket{::accept4(fd_, remote->Data(), &len, SOCK_NONBLOCK | SOCK_CLOEXEC)};
   if (!gen.Valid()) {
     LOG_ERROR("{} failed to accept", fd_);
     return Status::FromErr();
@@ -58,13 +56,11 @@ lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote,
   if (len == sizeof(sockaddr_in)) {
     remote->ipv6_ = false;
     remote->host_.resize(INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &remote->impl_.in4.sin_addr, remote->host_.data(),
-              INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &remote->impl_.in4.sin_addr, remote->host_.data(), INET_ADDRSTRLEN);
   } else {
     remote->ipv6_ = true;
     remote->host_.resize(INET6_ADDRSTRLEN);
-    inet_ntop(AF_INET6, &remote->impl_.in6.sin6_addr, remote->host_.data(),
-              INET6_ADDRSTRLEN);
+    inet_ntop(AF_INET6, &remote->impl_.in6.sin6_addr, remote->host_.data(), INET6_ADDRSTRLEN);
   }
   *socket = std::move(gen);
   return Status::Success();

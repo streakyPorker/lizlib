@@ -49,6 +49,10 @@ class EventLoop : public Executor {
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 
+  void Remove(const Channel::Ptr& channel, Callback callback);
+
+  void Add(const Channel::Ptr& channel, Callback callback);
+
   ~EventLoop() { pool_.Join(); }
 
  private:
