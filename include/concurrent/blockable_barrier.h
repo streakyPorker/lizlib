@@ -16,12 +16,7 @@ class BlockableBarrier {
 
   BlockableBarrier(size_t waits, std::mutex* mutex, std::condition_variable* cv,
                    bool own_mutex = false, CondVar* blocker = nullptr)
-      : total_(waits),
-        waiting_(0),
-        own_mutex_(own_mutex),
-        blocker_(blocker),
-        mu_(mutex),
-        cv_(cv) {}
+      : total_(waits), waiting_(0), own_mutex_(own_mutex), blocker_(blocker), mu_(mutex), cv_(cv) {}
 
   ~BlockableBarrier() {
     if (own_mutex_) {

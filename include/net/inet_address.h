@@ -18,8 +18,7 @@ class InetAddress {
   InetAddress(const std::string& host, uint16_t port, bool ipv6 = false);
   InetAddress(const InetAddress& addr) = default;
 
-  InetAddress(InetAddress&& addr) noexcept
-      : host_(std::move(addr.host_)), ipv6_(addr.ipv6_) {
+  InetAddress(InetAddress&& addr) noexcept : host_(std::move(addr.host_)), ipv6_(addr.ipv6_) {
     std::swap(impl_, addr.impl_);
   }
 
@@ -29,9 +28,7 @@ class InetAddress {
   InetAddress& operator=(const InetAddress& addr);
 
   [[nodiscard]] bool Ipv6() const noexcept { return ipv6_; }
-  [[nodiscard]] int Family() const noexcept {
-    return ipv6_ ? AF_INET6 : AF_INET;
-  }
+  [[nodiscard]] int Family() const noexcept { return ipv6_ ? AF_INET6 : AF_INET; }
 
   [[nodiscard]] const std::string& Host() const noexcept { return host_; }
   /**
@@ -44,13 +41,8 @@ class InetAddress {
     return fmt::format("InetAddress[{}:{}]", host_, Port());
   }
 
-
-  [[nodiscard]] sockaddr* Data() {
-    return reinterpret_cast<sockaddr*>(&impl_);
-  }
-  [[nodiscard]] const sockaddr* Data() const {
-    return reinterpret_cast<const sockaddr*>(&impl_);
-  }
+  [[nodiscard]] sockaddr* Data() { return reinterpret_cast<sockaddr*>(&impl_); }
+  [[nodiscard]] const sockaddr* Data() const { return reinterpret_cast<const sockaddr*>(&impl_); }
   [[nodiscard]] socklen_t Length() const { return sizeof(impl_); }
 
  private:

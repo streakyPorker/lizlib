@@ -4,8 +4,7 @@
 
 #include "net/inet_address.h"
 
-lizlib::InetAddress::InetAddress(const std::string& host, uint16_t port,
-                                 bool ipv6)
+lizlib::InetAddress::InetAddress(const std::string& host, uint16_t port, bool ipv6)
     : host_(host), ipv6_(ipv6) {
   if (ipv6) {
     impl_.in6.sin6_family = AF_INET6;
@@ -26,16 +25,14 @@ int lizlib::InetAddress::Port() const noexcept {
   return htons(ipv6_ ? impl_.in6.sin6_port : impl_.in4.sin_port);
 }
 
-lizlib::InetAddress& lizlib::InetAddress::operator=(
-  lizlib::InetAddress&& addr) {
+lizlib::InetAddress& lizlib::InetAddress::operator=(lizlib::InetAddress&& addr) {
   host_.swap(addr.host_);
   std::swap(ipv6_, addr.ipv6_);
   std::swap(impl_, addr.impl_);
   return *this;
 }
 
-lizlib::InetAddress& lizlib::InetAddress::operator=(
-  const lizlib::InetAddress& addr) {
+lizlib::InetAddress& lizlib::InetAddress::operator=(const lizlib::InetAddress& addr) {
   host_ = addr.host_;
   ipv6_ = addr.ipv6_;
   impl_ = addr.impl_;

@@ -46,4 +46,3 @@ void lizlib::TimerChannel::SetTimer(const lizlib::Duration& delay,
   ASSERT_FATAL(::timerfd_settime(file_.Fd(), 0, &timer_spec, nullptr) == 0,
                "initializing timer failed");
 }
-
