@@ -5,8 +5,6 @@
 #ifndef LIZLIB_SOCKET_H
 #define LIZLIB_SOCKET_H
 
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include "common/basic.h"
 #include "common/file.h"
 #include "net/config.h"

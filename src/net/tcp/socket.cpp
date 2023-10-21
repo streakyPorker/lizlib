@@ -4,6 +4,7 @@
 
 #include "net/tcp/socket.h"
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 
 lizlib::Socket& lizlib::Socket::operator=(lizlib::Socket&& other) noexcept {
