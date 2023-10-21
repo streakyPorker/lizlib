@@ -14,6 +14,9 @@ namespace lizlib {
 class EventLoop;
 using AcceptorCallback = std::function<void(Socket)>;
 
+/**
+ * Help TcpServer accepting tcp connections from a fixed server address
+ */
 class Acceptor {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(Acceptor);
@@ -23,7 +26,7 @@ class Acceptor {
 
   ~Acceptor() { Close(); }
 
-  void Bind() { channel_->Bind(address_); }
+  void Bind() { socket_channel_->Bind(server_address_); }
 
   void OnAccept(AcceptorCallback acceptor_callback) {
     acceptor_callback_ = std::move(acceptor_callback);
@@ -37,8 +40,8 @@ class Acceptor {
 
  private:
   AcceptorCallback acceptor_callback_;
-  InetAddress address_;
-  SocketChannel::Ptr channel_;
+  InetAddress server_address_;
+  SocketChannel::Ptr socket_channel_;
   EventLoop* eventloop_{nullptr};
 };
 }  // namespace lizlib

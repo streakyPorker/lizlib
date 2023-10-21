@@ -36,15 +36,13 @@ void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
   }
 }
 void lizlib::EventLoop::AddChannel(const lizlib::Channel::Ptr& channel, const lizlib::Callback& cb,
-                                   bool bind_executor) {
+                                   const SelectEvents& mode) {
   LOG_TRACE("EventLoop::AddChannel({})", *channel);
   if (current() != this) {
-    Submit([&]() mutable { AddChannel(channel, cb); });
+    Submit([&]() mutable { AddChannel(channel, cb, mode); });
   } else {
-    GetSelector()->Add(channel, lizlib::SelectEvents::kNoneEvent);
-    if (bind_executor) {
-      channel->SetExecutor(this);
-    }
+    GetSelector()->Add(channel, mode);
+    channel->SetExecutor(this);
     if (cb) {
       cb();
     }

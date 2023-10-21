@@ -7,17 +7,17 @@
 #include "net/eventloop/event_loop.h"
 lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddress& address)
     : eventloop_(eventloop),
-      address_(address),
-      channel_(std::make_shared<SocketChannel>(Socket::Create(address.Family(), true))) {
+      server_address_(address),
+      socket_channel_(std::make_shared<SocketChannel>(Socket::Create(address.Family(), true))) {
   LOG_TRACE("Initializing Acceptor...");
-  channel_->SetExecutor(eventloop_);
-  channel_->SetSelector(eventloop_->GetSelector());
-  channel_->OnRead([this](const ReceiveEvents& events, Timestamp now) {
+  socket_channel_->SetExecutor(eventloop_);
+  socket_channel_->SetSelector(eventloop_->GetSelector());
+  socket_channel_->SetReadCallback([this](const ReceiveEvents& events, Timestamp now) {
     while (true) {
       LOG_TRACE("{}::handleRead()", *this);
       Socket socket;
       InetAddress remote;
-      auto err = channel_->Accept(&remote, &socket);
+      auto err = socket_channel_->Accept(&remote, &socket);
       if (!err.OK()) {
         if (err.Code() == EAGAIN || err.Code() == EWOULDBLOCK) {
           break;
@@ -32,21 +32,19 @@ lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddre
   });
 }
 std::string lizlib::Acceptor::String() const {
-  return fmt::format("Acceptor[socket={}]", channel_->GetFile());
+  return fmt::format("Acceptor[socket={}]", socket_channel_->GetFile());
 }
 void lizlib::Acceptor::Listen() {
-  eventloop_->AddChannel(
-    channel_,
-    [this] {
-      channel_->SetReadable(true);
-      channel_->Listen();
-    },
-    false);
+  // clang-format off
+  eventloop_->AddChannel(socket_channel_,
+    [this] { socket_channel_->Listen(); },
+    SelectEvents::kReadEvent);
+  // clang-format on
 }
 void lizlib::Acceptor::Close() {
   LOG_TRACE("Acceptor::Close() enter");
   CountdownLatch latch{1};
-  eventloop_->RemoveChannel(channel_, [&] { latch.CountDown(); });
+  eventloop_->RemoveChannel(socket_channel_, [&] { latch.CountDown(); });
   latch.Await();
   LOG_TRACE("Acceptor::Close() exit");
 }

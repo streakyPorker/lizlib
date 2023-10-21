@@ -5,14 +5,18 @@
 #include "net/tcp/tcp_connection.h"
 void lizlib::TcpConnection::Start() {
   context_->conn_ = this;
-  channel_->OnRead([this](auto events, auto now) { handleRead(now); });
-  channel_->OnWrite([this](auto events, auto now) { handleWrite(); });
-  channel_->OnClose([this](auto events, auto now) { handleClose(); });
-  channel_->OnError([this](auto events, auto now) { handleError(channel_->GetError()); });
+  channel_->SetReadCallback([this](auto events, auto now) { handleRead(now); });
+  channel_->SetWriteCallback([this](auto events, auto now) { handleWrite(); });
+  channel_->SetCloseCallback([this](auto events, auto now) { handleClose(); });
+  channel_->SetErrorCallback([this](auto events, auto now) { handleError(channel_->GetError()); });
   channel_->SetSelector(loop_->GetSelector());
 
   // set to redirect the callback tasks to the executor, rather than run it in the epoll thread
   channel_->SetExecutor(loop_);
+
+  /*
+   * run OnConnect first, then enable handling requests
+   */
   loop_->AddChannel(channel_, [self = shared_from_this()] {
     LOG_INFO("handleConnection {}", *self);
     self->handler_->OnConnect(Timestamp::Now());
@@ -40,8 +44,7 @@ void lizlib::TcpConnection::handleError(lizlib::Status err) {
 }
 void lizlib::TcpConnection::handleWrite() {
   if (!channel_->Writable()) {
-    LOG_WARN("Not allowed to write to channel[{}]", channel_->GetFile());
-    return;
+    LOG_FATAL("Not allowed to write to channel[{}]", channel_->GetFile());
   }
   if (output_.ReadableBytes() > 0) {
     ssize_t n = channel_->Write(output_.RPtr(), output_.ReadableBytes());
@@ -71,10 +74,8 @@ void lizlib::TcpConnection::handleClose() {
 }
 
 void lizlib::TcpConnection::handleRemove() {
-  if (state_ != TcpState::kDisconnected) {
-    LOG_FATAL("only remove when disconnected");
-    return;
-  }
+  ASSERT_FATAL(state_ == TcpState::kDisconnected, "remove while not disconnected");
+
   handler_->OnClose(Timestamp::Now());
   context_->conn_ = nullptr;
 }
@@ -179,4 +180,10 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer) {
     output_.Append(buffer.data(), buffer.size(), false, false);
     channel_->SetWritable(true);
   }
+}
+lizlib::Buffer& lizlib::ChannelContext::GetOutputBuffer() {
+  return conn_->output_;
+}
+lizlib::Buffer& lizlib::ChannelContext::GetInputBuffer() {
+  return conn_->input_;
 }

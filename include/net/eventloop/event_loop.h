@@ -43,7 +43,15 @@ class EventLoop : public Executor {
   void SubmitDelay(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
-  void AddChannel(const Channel::Ptr& channel, const Callback& cb, bool bind_executor = true);
+  /**
+   * Add channel to the eventloop, run the callback after it it done.
+   * <br>
+   * @param channel
+   * @param cb
+   * @param mode
+   */
+  void AddChannel(const lizlib::Channel::Ptr& channel, const lizlib::Callback& cb,
+                  const SelectEvents& mode = SelectEvents::kNoneEvent);
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 

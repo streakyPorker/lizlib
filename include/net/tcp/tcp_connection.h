@@ -4,8 +4,7 @@
 
 #ifndef LIZLIB_TCP_CONNECTION_H
 #define LIZLIB_TCP_CONNECTION_H
-#include "common/basic.h"
-#include "common/buffer.h"
+#include "channel_handler.h"
 #include "concurrent/thread_pool.h"
 #include "net/channel/socket_channel.h"
 #include "net/eventloop/event_loop.h"
@@ -20,22 +19,11 @@ class ChannelContext {
   LIZ_CLAIM_SHARED_PTR(ChannelContext);
 
   TcpConnection* GetConnection() { return conn_; }
-  Buffer* GetOutputBuffer();
-  Buffer* GetInputBuffer();
+  Buffer& GetOutputBuffer();
+  Buffer& GetInputBuffer();
 
  private:
   TcpConnection* conn_{};
-};
-
-struct ChannelHandler {
-  LIZ_CLAIM_SHARED_PTR(ChannelHandler);
-
-  virtual ~ChannelHandler() = default;
-  virtual void OnRead(Timestamp now, Buffer& buffer) = 0;
-  virtual void OnWriteComplete(Timestamp now) = 0;
-  virtual void OnError(Timestamp now, Status err) = 0;
-  virtual void OnConnect(Timestamp now) = 0;
-  virtual void OnClose(Timestamp now) = 0;
 };
 
 using ChannelBuilder = std::function<ChannelHandler::Ptr(ChannelContext::Ptr)>;
@@ -45,7 +33,6 @@ class ChannelHandlerAdaptor : public ChannelHandler {
   using Ptr = std::shared_ptr<ChannelHandlerAdaptor>;
 
   explicit ChannelHandlerAdaptor(ChannelContext::Ptr ctx) : ctx_(std::move(ctx)) {}
-
   void OnRead(Timestamp now, Buffer& buffer) override {}
   void OnWriteComplete(Timestamp now) override {}
   void OnError(Timestamp now, Status err) override {}

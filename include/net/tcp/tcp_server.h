@@ -17,11 +17,20 @@ class TcpServer {
   LIZ_DISABLE_COPY_AND_MOVE(TcpServer);
   friend class TcpServerChannelHandler;
 
+  TcpServer() = default;
+  ~TcpServer() { Close(); }
+
   void SetGroup(EventLoopGroup::Ptr boss, EventLoopGroup::Ptr worker) {
     boss_group_ = std::move(boss);
     worker_group_ = std::move(worker);
   }
 
+  /**
+   * 1. check eventloopgroup setting
+   * 2. init acceptor
+   * 3. bind the acceptor to server address
+   * @param address server address
+   */
   void Bind(const InetAddress& address);
 
   void Start();
@@ -32,7 +41,6 @@ class TcpServer {
  private:
   EventLoopGroup::Ptr boss_group_;
   EventLoopGroup::Ptr worker_group_;
-  //  Acceptor::Ptr acceptor_;
 
   ChannelBuilder builder_;
 

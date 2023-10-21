@@ -54,11 +54,11 @@ lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote, lizlib::Socke
     return Status::FromErr();
   }
   if (len == sizeof(sockaddr_in)) {
-    remote->ipv6_ = false;
+    remote->ipv6_enabled_ = false;
     remote->host_.resize(INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &remote->impl_.in4.sin_addr, remote->host_.data(), INET_ADDRSTRLEN);
   } else {
-    remote->ipv6_ = true;
+    remote->ipv6_enabled_ = true;
     remote->host_.resize(INET6_ADDRSTRLEN);
     inet_ntop(AF_INET6, &remote->impl_.in6.sin6_addr, remote->host_.data(), INET6_ADDRSTRLEN);
   }

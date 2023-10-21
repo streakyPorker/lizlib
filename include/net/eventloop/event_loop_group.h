@@ -20,7 +20,7 @@ class EventLoopGroup final : public Executor {
     (executor->Join(), ...);
   }
 
-  EventLoop& Next() { return loops_[next()]; }
+  EventLoop* Next() { return &loops_[next()]; }
 
   void Submit(const Runnable& runnable) override;
   void Join() override { handleJoin(); };

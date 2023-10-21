@@ -34,13 +34,21 @@ class SocketChannel final : public Socket,
    */
   void SetWritable(bool on);
 
-  void OnRead(SelectorCallback read_callback) { read_callback_ = std::move(read_callback); }
+  void SetReadCallback(SelectorCallback read_callback) {
+    read_callback_ = std::move(read_callback);
+  }
 
-  void OnClose(SelectorCallback close_callback) { close_callback_ = std::move(close_callback); }
+  void SetCloseCallback(SelectorCallback close_callback) {
+    close_callback_ = std::move(close_callback);
+  }
 
-  void OnWrite(SelectorCallback write_callback) { write_callback_ = std::move(write_callback); }
+  void SetWriteCallback(SelectorCallback write_callback) {
+    write_callback_ = std::move(write_callback);
+  }
 
-  void OnError(SelectorCallback error_callback) { error_callback_ = std::move(error_callback); }
+  void SetErrorCallback(SelectorCallback error_callback) {
+    error_callback_ = std::move(error_callback);
+  }
 
   File& GetFile() override;
 

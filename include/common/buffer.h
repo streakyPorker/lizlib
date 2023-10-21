@@ -11,7 +11,8 @@ class Buffer : public Slice {
   using Deleter = void (*)(void*);
   Buffer() = default;
   explicit Buffer(size_t length, bool aligned = true)
-      : Buffer(aligned ? ::aligned_alloc(config::kPageSize, length) : malloc(length), length, free) {
+      : Buffer(aligned ? ::aligned_alloc(config::kPageSize, length) : malloc(length), length,
+               free) {
     aligned_ = aligned;
   }
   Buffer(const Buffer& cpy) = default;
@@ -19,11 +20,11 @@ class Buffer : public Slice {
     cpy.deleter_ = nullptr;
     cpy.Clear();
   };
+  Buffer(const std::string& str, Deleter deleter = nullptr) : Slice(str), deleter_(deleter) {}
+  Buffer(std::string&& str, Deleter deleter = nullptr) : Slice(std::move(str)), deleter_(deleter) {}
 
   Buffer(void* data, size_t length, Deleter deleter = nullptr)
       : Slice(data, length), deleter_(deleter) {}
-  Buffer(const std::string& str, Deleter deleter = nullptr) : Slice(str), deleter_(deleter) {}
-  Buffer(std::string&& str, Deleter deleter = nullptr) : Slice(std::move(str)), deleter_(deleter) {}
 
   [[nodiscard]] inline uint64_t RIndex() const { return r_idx_; }
   [[nodiscard]] inline ssize_t ReadableBytes() const { return w_idx_ - r_idx_; }
