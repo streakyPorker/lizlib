@@ -140,12 +140,18 @@ void lizlib::TcpConnection::Send(lizlib::Buffer* buf) {
       if (output_.ReadableBytes()) {
         channel_->SetWritable(true);
         handleWrite();
+        //        buf->Reset();
       }
       return;
     }
     handleSend({buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())});
     buf->Reset();
+    return;
   }
+  loop_->Submit([self = shared_from_this(),
+                 clone = std::string_view{buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())}] {
+    self->handleSend(clone);
+  });
 }
 void lizlib::TcpConnection::Send(const std::string& buffer) {
   if (EventLoop::CheckUnderLoop(loop_)) {
@@ -153,7 +159,7 @@ void lizlib::TcpConnection::Send(const std::string& buffer) {
     return;
   }
   loop_->Submit(
-    [self = shared_from_this(), clone = std::string(buffer)] { self->handleSend(clone); });
+    [self = shared_from_this(), clone = std::string_view(buffer)] { self->handleSend(clone); });
 }
 
 void lizlib::TcpConnection::Send(std::string_view buffer) {
@@ -161,8 +167,8 @@ void lizlib::TcpConnection::Send(std::string_view buffer) {
     handleSend(buffer);
     return;
   }
-  loop_->Submit(
-    [self = shared_from_this(), clone = std::string(buffer)] { self->handleSend(clone); });
+  // shallow copy here sine string_view itself is a non-owning object
+  loop_->Submit([self = shared_from_this(), &buffer] { self->handleSend(buffer); });
 }
 void lizlib::TcpConnection::handleSend(std::string_view buffer) {
   if (state_.load(std::memory_order_relaxed) != TcpState::kConnected) {

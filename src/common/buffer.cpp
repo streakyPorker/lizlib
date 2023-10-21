@@ -162,9 +162,11 @@ ssize_t lizlib::Buffer::Append(lizlib::Slice& slice, bool capped, bool drop_read
 }
 void lizlib::Buffer::Rearrange() {
   size_t used = ReadableBytes();
-  if (used != 0) {
-    std::memmove(data_, data_ + r_idx_, used);
+  if (used == 0) {
+    Reset();
+    return;
   }
+  std::memmove(data_, data_ + r_idx_, used);
   r_idx_ = 0;
   w_idx_ = used;
 }
