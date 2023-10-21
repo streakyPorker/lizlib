@@ -57,23 +57,26 @@ ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped, bool 
   w_idx_ += size;
   return size;
 }
-ssize_t lizlib::Buffer::Append(const File* file, bool capped, bool drop_read_bytes) {
-  ssize_t file_size = file->Size();
+ssize_t lizlib::Buffer::Append(const File* file, ssize_t read_bytes, bool capped,
+                               bool drop_read_bytes) {
+  ssize_t read_size = std::min(read_bytes, file->Size());
   ssize_t ret = -1;
-  ifUnlikely(!ensureWritable(file_size, capped, drop_read_bytes)) {
+  ifUnlikely(!ensureWritable(read_size, capped, drop_read_bytes)) {
     return -1;
   }
   char* next_page = CeilPageAlignAddr(WPtr());
   ssize_t page_remain = next_page - WPtr();
   // fits the remain page
-  if (file_size <= page_remain) {
-    ret = file->Read(WPtr(), file_size);
-    if (ret >= 0) {
+  if (read_size <= page_remain) {
+    ret = file->Read(WPtr(), read_size);
+    ifLikely(ret >= 0) {
       w_idx_ += ret;
     }
     return ret;
   }
-  ssize_t left = file_size - page_remain;
+  // read file by page
+
+  ssize_t left = read_size - page_remain;
   ssize_t splits = (left / config::kFileRWUnit) + 1;
   ssize_t mod = left % config::kFileRWUnit;
   Slice slices[splits + 1];
@@ -101,7 +104,7 @@ ssize_t lizlib::Buffer::Read(void* data, ssize_t size, bool rearrange) {
   ssize_t read_bytes = std::min(size, (ssize_t)ReadableBytes());
   memcpy(data, RPtr(), read_bytes);
   r_idx_ += read_bytes;
-  if (r_idx_ == w_idx_ && rearrange) {
+  if (r_idx_ == w_idx_ || rearrange) {
     Rearrange();
   }
   return read_bytes;
@@ -178,7 +181,7 @@ ssize_t lizlib::Buffer::Transfer(lizlib::Buffer& from, bool capped, bool drop_re
 }
 void lizlib::Buffer::Retrieve(size_t n, bool rearrange) {
   r_idx_ = std::min(r_idx_ + n, w_idx_);
-  if (r_idx_ == w_idx_ && rearrange) {
+  if (r_idx_ == w_idx_ || rearrange) {
     Rearrange();
   }
 }
