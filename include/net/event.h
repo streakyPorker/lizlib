@@ -86,7 +86,7 @@ class SelectEvents final : public Events {
   static const SelectEvents kReadEvent;
   static const SelectEvents kWriteEvent;
 
-  [[nodiscard]] SelectTrigger Trigger() const noexcept {
+  [[nodiscard]] SelectTrigger TriggerMode() const noexcept {
     return (events_ & EPOLLET) == 0 ? SelectTrigger::kHorizon : SelectTrigger::kEdge;
   };
 

@@ -4,7 +4,6 @@
 
 #include "net/event.h"
 #include <sys/epoll.h>
-#include <sys/poll.h>
 
 namespace lizlib {
 const ReceiveEvents ReceiveEvents::kHangUp{EPOLLHUP};

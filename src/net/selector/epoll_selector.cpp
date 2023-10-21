@@ -3,6 +3,7 @@
 //
 
 #include "net/selector/epoll_selector.h"
+#include <sys/epoll.h>
 void lizlib::EpollSelector::Add(const Channel::Ptr& channel, SelectEvents events) {
   internalUpdate(channel.get(), EPOLL_CTL_ADD, events);
 }
@@ -25,7 +26,6 @@ lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
   selected->occur_ts = Timestamp::Now();
   selected->events.clear();
   selected->channels.clear();
-  std::cout.flush();
   for (int i = 0; i < count; i++) {
     selected->channels.emplace_back(static_cast<Channel*>(epoll_events_[i].data.ptr));
     selected->events.emplace_back(epoll_events_[i].events);

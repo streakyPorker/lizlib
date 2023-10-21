@@ -60,7 +60,7 @@ ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped, bool 
 ssize_t lizlib::Buffer::Append(const File* file, ssize_t read_bytes, bool capped,
                                bool drop_read_bytes) {
   ssize_t read_size = std::min(read_bytes, file->Size());
-  ssize_t ret = -1;
+  ssize_t ret;
   ifUnlikely(!ensureWritable(read_size, capped, drop_read_bytes)) {
     return -1;
   }

@@ -48,7 +48,8 @@ class Buffer : public Slice {
     return size;
   }
 
-  ssize_t Append(const File* file,ssize_t read_bytes,bool capped = false, bool drop_read_bytes = false);
+  ssize_t Append(const File* file, ssize_t read_bytes = SSIZE_MAX, bool capped = false,
+                 bool drop_read_bytes = false);
 
   ssize_t Append(Slice& slice, bool capped = false, bool drop_read_bytes = false);
 

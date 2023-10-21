@@ -132,11 +132,11 @@ void lizlib::TcpConnection::Send(lizlib::Buffer* buf) {
       if (output_.ReadableBytes()) {
         channel_->SetWritable(true);
         handleWrite();
-        buf->Reset();
       }
       return;
     }
     handleSend({buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())});
+    buf->Reset();
   }
 }
 void lizlib::TcpConnection::Send(const std::string& buffer) {
@@ -177,7 +177,8 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer) {
   }
 
   if (!buffer.empty()) {
-    output_.Append(buffer.data(), buffer.size(), false, false);
+    ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
+    ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
     channel_->SetWritable(true);
   }
 }

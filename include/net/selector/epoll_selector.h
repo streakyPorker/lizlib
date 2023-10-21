@@ -5,8 +5,6 @@
 #ifndef LIZLIB_EPOLL_SELECTOR_H
 #define LIZLIB_EPOLL_SELECTOR_H
 
-#include <sys/epoll.h>
-#include "common/file.h"
 #include "net/channel/channel.h"
 #include "net/selector/selector.h"
 namespace lizlib {
