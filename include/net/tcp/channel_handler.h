@@ -10,6 +10,7 @@
 namespace lizlib {
 struct ChannelHandler {
   LIZ_CLAIM_SHARED_PTR(ChannelHandler);
+  LIZ_CLAIM_UNIQUE_PTR(ChannelHandler);
 
   virtual ~ChannelHandler() = default;
   virtual void OnRead(Timestamp now, Buffer& buffer) = 0;

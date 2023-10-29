@@ -5,13 +5,25 @@
 #include "net/selector/epoll_selector.h"
 #include <sys/epoll.h>
 void lizlib::EpollSelector::Add(const Channel::Ptr& channel, SelectEvents events) {
+  if (register_map_.Contains(channel.get())) {
+    return;
+  }
+  register_map_.Put(channel.get(), events.Value());
   internalUpdate(channel.get(), EPOLL_CTL_ADD, events);
 }
 
 void lizlib::EpollSelector::Remove(const Channel::Ptr& channel) {
+  if (!register_map_.Contains(channel.get())) {
+    return;
+  }
+  register_map_.Remove(channel.get());
   internalUpdate(channel.get(), EPOLL_CTL_DEL, SelectEvents::kNoneEvent);
 }
 void lizlib::EpollSelector::Update(const Channel::Ptr& channel, lizlib::SelectEvents events) {
+  if (register_map_.Contains(channel.get())) {
+    LOG_FATAL("updating a non-existing fd");
+  }
+  register_map_.Put(channel.get(), events.Value());
   internalUpdate(channel.get(), EPOLL_CTL_MOD, events);
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,

@@ -21,6 +21,7 @@ class Acceptor {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(Acceptor);
   LIZ_CLAIM_SHARED_PTR(Acceptor);
+  LIZ_CLAIM_UNIQUE_PTR(Acceptor);
 
   Acceptor(EventLoop* eventloop, const InetAddress& address);
 

@@ -5,6 +5,7 @@
 #ifndef LIZLIB_EPOLL_SELECTOR_H
 #define LIZLIB_EPOLL_SELECTOR_H
 
+#include "concurrent/unordered_c_map.h"
 #include "net/channel/channel.h"
 #include "net/selector/selector.h"
 namespace lizlib {
@@ -30,6 +31,7 @@ class EpollSelector final : public Selector {
  private:
   int fd_{-1};
   std::vector<struct epoll_event> epoll_events_;
+  UnorderedCMap<Channel*, uint32_t> register_map_;
   void internalUpdate(Channel*, int epoll_op, const SelectEvents& select_events);
 
   static int createEpollFd() {

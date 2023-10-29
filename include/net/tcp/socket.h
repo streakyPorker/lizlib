@@ -41,7 +41,7 @@ class Socket : public File {
 
   void SetTcpNoDelay(bool on);
 
-  void ApplyDefaultOption() {
+  void ApplySettingOption() {
     SetReuseAddr(kTcpOption.reuse_addr);
     SetReusePort(kTcpOption.reuse_port);
     SetKeepAlive(kTcpOption.keep_alive);

@@ -46,6 +46,7 @@ class EventLoop : public Executor {
   /**
    * Add channel to the eventloop, run the callback after it it done.
    * <br>
+   * by default, the channel won't activate a epoll event, need to set it as Readable/Writable events
    * @param channel
    * @param cb
    * @param mode

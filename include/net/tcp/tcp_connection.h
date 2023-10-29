@@ -71,7 +71,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   TcpState GetState() const noexcept { return state_; }
 
-  void SetHandler(ChannelHandler::Ptr handler) { handler_ = std::move(handler); }
+  void SetHandler(ChannelHandler::Ptr&& handler) {
+    handler_ = std::forward<ChannelHandler::Ptr>(handler);
+  }
 
   const InetAddress& GetLocalAddress() const noexcept { return local_addr_; }
 
