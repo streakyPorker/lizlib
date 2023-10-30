@@ -44,7 +44,6 @@ class TcpServerInternalHandler final : public ChannelHandler {
 
 void lizlib::TcpServer::Start() {
   LOG_TRACE("TcpServer::Start() begin...");
-
   acceptor_->OnAccept([this](Socket socket) {
     LOG_TRACE("TcpServer::OnAccept({})", socket);
     socket.ApplySettingOption();
@@ -71,4 +70,5 @@ void lizlib::TcpServer::Close() {
     conn->Close();
   }
   conns_.clear();
+  LOG_TRACE("TcpServer::Close() end...");
 }
