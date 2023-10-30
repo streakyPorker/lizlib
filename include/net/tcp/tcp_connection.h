@@ -11,24 +11,7 @@
 
 namespace lizlib {
 
-using ChannelBuilder = std::function<ChannelHandler::Ptr(ChannelContext::Ptr)>;
 
-class ChannelHandlerAdaptor : public ChannelHandler {
- public:
-  using Ptr = std::shared_ptr<ChannelHandlerAdaptor>;
-
-  explicit ChannelHandlerAdaptor(ChannelContext::Ptr ctx) : ctx_(std::move(ctx)) {}
-  void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {}
-  void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {}
-  void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {}
-  void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {}
-  void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {}
-  auto GetConnection() { return ctx_->GetConnection(); }
-  ChannelContext& GetContext() { return *ctx_; }
-
- private:
-  ChannelContext::Ptr ctx_;
-};
 
 enum class TcpState { kConnected, kDisconnected, kConnecting, kDisconnecting };
 

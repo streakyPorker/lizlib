@@ -19,6 +19,14 @@ void lizlib::TcpConnection::Start() {
    */
   loop_->AddChannel(channel_, [self = shared_from_this()] {
     LOG_INFO("handleConnection {}", *self);
+    TcpState desired = TcpState::kConnecting;
+
+    if (self->state_.compare_exchange_strong(desired, TcpState::kConnected,
+                                             std::memory_order_acq_rel)) {
+      // already connected
+      return;
+    }
+
     self->handler_->OnConnect(self->GetChannelContext(), Timestamp::Now());
     self->channel_->SetReadable(true);
   });
@@ -98,6 +106,7 @@ void lizlib::TcpConnection::Close() {
 void lizlib::TcpConnection::Shutdown() {
   auto desired = TcpState::kConnected;
   if (!state_.compare_exchange_strong(desired, TcpState::kDisconnecting)) {
+    LOG_WARN("Shutting down a connection while it's not connected won't help")
     return;
   }
   loop_->Submit([this]() {

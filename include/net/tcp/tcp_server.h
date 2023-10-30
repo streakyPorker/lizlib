@@ -9,16 +9,21 @@
 #include "net/eventloop/event_loop_group.h"
 #include "net/tcp/tcp_connection.h"
 namespace lizlib {
-class TcpServerChannelHandler;
+class TcpServerInternalHandler;
 
-/**
- */
+
 class TcpServer {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpServer);
-  friend class TcpServerChannelHandler;
+  friend class TcpServerInternalHandler;
 
-  //  TcpServer() = default;
+  /**
+   * Ctor of a TcpServer
+   * @param address server addr
+   * @param boss eventloops that distributes connections to workers;
+   * @param worker eventloops that process the connection events
+   * @param custom_handler reactive style of webserver
+   */
   TcpServer(const InetAddress& address, EventLoopGroup::Ptr boss, EventLoopGroup::Ptr worker,
             const ChannelHandler::Ptr& custom_handler)
       : boss_group_{std::move(boss)},

@@ -7,9 +7,9 @@
 #include <utility>
 #include "common/basic.h"
 namespace lizlib {
-class TcpServerChannelHandler final : public ChannelHandler {
+class TcpServerInternalHandler final : public ChannelHandler {
  public:
-  explicit TcpServerChannelHandler(TcpServer* server, ChannelHandler::Ptr custom_handler)
+  explicit TcpServerInternalHandler(TcpServer* server, ChannelHandler::Ptr custom_handler)
       : server_(server), custom_handler_(std::move(custom_handler)) {}
 
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
@@ -49,14 +49,26 @@ void lizlib::TcpServer::Start() {
     LOG_TRACE("TcpServer::OnAccept({})", socket);
     socket.ApplySettingOption();
     auto conn = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(socket));
+    // one proxy handler for all connections
     conn->SetHandler(internal_handler_);
     conn->Start();
   });
 
   acceptor_->Listen();
+  LOG_TRACE("TcpServer::Start() end...");
 }
 lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
   const ChannelHandler::Ptr& custom_handler) {
   return std::dynamic_pointer_cast<ChannelHandler>(
-    std::make_shared<TcpServerChannelHandler>(this, custom_handler));
+    std::make_shared<TcpServerInternalHandler>(this, custom_handler));
+}
+void lizlib::TcpServer::Close() {
+  LOG_TRACE("TcpServer::Close() begin...");
+  acceptor_->Close();
+
+  std::unique_lock<std::mutex> unique_lock{mu_};
+  for (const auto& conn : conns_) {
+    conn->Close();
+  }
+  conns_.clear();
 }
