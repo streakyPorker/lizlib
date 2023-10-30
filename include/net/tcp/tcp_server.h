@@ -12,24 +12,24 @@ namespace lizlib {
 class TcpServerChannelHandler;
 
 /**
- * 3 step to create a TcpServer:
- * <br>1. create the object
- * <br>2. call Bind() to bind it to certain server address or the ctor with address
- * <br>3. call Start
  */
 class TcpServer {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpServer);
   friend class TcpServerChannelHandler;
 
-  TcpServer() = default;
-  explicit TcpServer(const InetAddress& address) : TcpServer() { Bind(address); }
-  ~TcpServer() { Close(); }
-
-  void SetGroup(EventLoopGroup::Ptr boss, EventLoopGroup::Ptr worker) {
-    boss_group_ = std::move(boss);
-    worker_group_ = std::move(worker);
+  //  TcpServer() = default;
+  TcpServer(const InetAddress& address, EventLoopGroup::Ptr boss, EventLoopGroup::Ptr worker,
+            const ChannelHandler::Ptr& custom_handler)
+      : boss_group_{std::move(boss)},
+        worker_group_{std::move(worker)},
+        acceptor_{std::move(std::make_unique<Acceptor>(boss_group_->Next(), address))},
+        internal_handler_{generateInternalHandler(custom_handler)} {
+    LOG_TRACE("TcpServer init...");
+    acceptor_->Bind();
   }
+
+  ~TcpServer() { Close(); }
 
   /**
    * 1. check eventloopgroup setting
@@ -37,21 +37,22 @@ class TcpServer {
    * 3. bind the acceptor to server address
    * @param address server address
    */
-  void Bind(const InetAddress& address);
 
   void Start();
   void Close();
 
-  void SetBuilder(ChannelBuilder handler) { builder_ = std::move(handler); }
+
 
  private:
-  EventLoopGroup::Ptr boss_group_;
-  EventLoopGroup::Ptr worker_group_;
+  ChannelHandler::Ptr generateInternalHandler(const ChannelHandler::Ptr& custom_handler);
 
-  ChannelBuilder builder_;
+  const EventLoopGroup::Ptr boss_group_;
+  const EventLoopGroup::Ptr worker_group_;
+
+  ChannelHandler::Ptr internal_handler_{nullptr};
 
   std::mutex mu_;
-  Acceptor::UniPtr acceptor_;
+  const Acceptor::Ptr acceptor_;
   std::unordered_set<TcpConnection::Ptr> conns_;
 };
 

@@ -4,26 +4,12 @@
 
 #ifndef LIZLIB_TCP_CONNECTION_H
 #define LIZLIB_TCP_CONNECTION_H
-#include "channel_handler.h"
 #include "net/channel/socket_channel.h"
 #include "net/eventloop/event_loop.h"
+#include "net/tcp/channel_context.h"
+#include "net/tcp/channel_handler.h"
 
 namespace lizlib {
-class TcpConnection;
-
-class ChannelContext {
-  friend class TcpConnection;
-
- public:
-  LIZ_CLAIM_SHARED_PTR(ChannelContext);
-
-  TcpConnection* GetConnection() { return conn_; }
-  Buffer& GetOutputBuffer();
-  Buffer& GetInputBuffer();
-
- private:
-  TcpConnection* conn_{};
-};
 
 using ChannelBuilder = std::function<ChannelHandler::Ptr(ChannelContext::Ptr)>;
 
@@ -32,11 +18,11 @@ class ChannelHandlerAdaptor : public ChannelHandler {
   using Ptr = std::shared_ptr<ChannelHandlerAdaptor>;
 
   explicit ChannelHandlerAdaptor(ChannelContext::Ptr ctx) : ctx_(std::move(ctx)) {}
-  void OnRead(Timestamp now, Buffer& buffer) override {}
-  void OnWriteComplete(Timestamp now) override {}
-  void OnError(Timestamp now, Status err) override {}
-  void OnConnect(Timestamp now) override {}
-  void OnClose(Timestamp now) override {}
+  void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {}
+  void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {}
+  void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {}
+  void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {}
+  void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {}
   auto GetConnection() { return ctx_->GetConnection(); }
   ChannelContext& GetContext() { return *ctx_; }
 
@@ -61,6 +47,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
       : channel_(std::make_shared<SocketChannel>(std::move(socket))),
         local_addr_(channel_->GetLocalAddress()),
         loop_{loop},
+        // conn_ will be set on Start()
         context_(std::make_shared<ChannelContext>()) {
     ASSERT_FATAL(loop != nullptr, "invalid eventloop detected");
   }
@@ -71,9 +58,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   TcpState GetState() const noexcept { return state_; }
 
-  void SetHandler(ChannelHandler::Ptr&& handler) {
-    handler_ = std::forward<ChannelHandler::Ptr>(handler);
-  }
+  void SetHandler(ChannelHandler::Ptr handler) { handler_ = std::move(handler); }
 
   const InetAddress& GetLocalAddress() const noexcept { return local_addr_; }
 

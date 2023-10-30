@@ -9,49 +9,54 @@
 namespace lizlib {
 class TcpServerChannelHandler final : public ChannelHandler {
  public:
-  explicit TcpServerChannelHandler(ChannelContext::Ptr ctx, TcpServer* server)
-      : ctx_(std::move(ctx)), server_(server) {
-    custom_handler_ = server_->builder_(ctx_);
+  explicit TcpServerChannelHandler(TcpServer* server, ChannelHandler::Ptr custom_handler)
+      : server_(server), custom_handler_(std::move(custom_handler)) {}
+
+  void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
+    custom_handler_->OnRead(ctx, now, buffer);
   }
 
-  void OnRead(Timestamp now, Buffer& buffer) override { custom_handler_->OnRead(now, buffer); }
-
-  void OnWriteComplete(Timestamp now) override { custom_handler_->OnWriteComplete(now); }
-
-  void OnError(Timestamp now, Status err) override { custom_handler_->OnError(now, err); }
-
-  void OnConnect(Timestamp now) override {
-    custom_handler_->OnConnect(now);
-    std::unique_lock lock(server_->mu_);
-    server_->conns_.emplace(ctx_->GetConnection()->shared_from_this());
+  void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
+    custom_handler_->OnWriteComplete(ctx, now);
   }
 
-  void OnClose(Timestamp now) override {
-    custom_handler_->OnClose(now);
+  void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {
+    custom_handler_->OnError(ctx, now, err);
+  }
+
+  void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {
+    custom_handler_->OnConnect(ctx, now);
     std::unique_lock lock(server_->mu_);
-    server_->conns_.erase(ctx_->GetConnection()->shared_from_this());
+    server_->conns_.emplace(ctx->GetConnection()->shared_from_this());
+  }
+
+  void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {
+    custom_handler_->OnClose(ctx, now);
+    std::unique_lock lock(server_->mu_);
+    server_->conns_.erase(ctx->GetConnection()->shared_from_this());
   }
 
  private:
-  TcpServer* server_;
-  ChannelContext::Ptr ctx_;
-  std::shared_ptr<ChannelHandler> custom_handler_;
+  TcpServer* server_{nullptr};
+  ChannelHandler::Ptr custom_handler_;
 };
 }  // namespace lizlib
 
-void lizlib::TcpServer::Bind(const lizlib::InetAddress& address) {
-  LOG_TRACE("TcpServer::Bind");
-  ASSERT_FATAL(boss_group_ != nullptr, "Boss group unset");
-  acceptor_ = std::make_unique<Acceptor>(boss_group_->Next(), address);
-  acceptor_->Bind();
-}
 void lizlib::TcpServer::Start() {
   LOG_TRACE("TcpServer::Start() begin...");
+
   acceptor_->OnAccept([this](Socket socket) {
     LOG_TRACE("TcpServer::OnAccept({})", socket);
     socket.ApplySettingOption();
     auto conn = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(socket));
-    conn->SetHandler(std::make_shared<TcpServerChannelHandler>(conn->GetChannelContext(), this));
+    conn->SetHandler(internal_handler_);
     conn->Start();
   });
+
+  acceptor_->Listen();
+}
+lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
+  const ChannelHandler::Ptr& custom_handler) {
+  return std::dynamic_pointer_cast<ChannelHandler>(
+    std::make_shared<TcpServerChannelHandler>(this, custom_handler));
 }

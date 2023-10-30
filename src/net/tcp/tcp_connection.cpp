@@ -4,7 +4,7 @@
 
 #include "net/tcp/tcp_connection.h"
 void lizlib::TcpConnection::Start() {
-  context_->conn_ = this;
+  context_->SetConnection(this);
   channel_->SetReadCallback([this](auto events, auto now) { handleRead(now); });
   channel_->SetWriteCallback([this](auto events, auto now) { handleWrite(); });
   channel_->SetCloseCallback([this](auto events, auto now) { handleClose(); });
@@ -19,7 +19,7 @@ void lizlib::TcpConnection::Start() {
    */
   loop_->AddChannel(channel_, [self = shared_from_this()] {
     LOG_INFO("handleConnection {}", *self);
-    self->handler_->OnConnect(Timestamp::Now());
+    self->handler_->OnConnect(self->GetChannelContext(), Timestamp::Now());
     self->channel_->SetReadable(true);
   });
 }
@@ -37,10 +37,10 @@ void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
     handleClose();
     return;
   }
-  handler_->OnRead(now, input_);
+  handler_->OnRead(GetChannelContext(), now, input_);
 }
 void lizlib::TcpConnection::handleError(lizlib::Status err) {
-  handler_->OnError(Timestamp::Now(), err);
+  handler_->OnError(GetChannelContext(), Timestamp::Now(), err);
 }
 void lizlib::TcpConnection::handleWrite() {
   if (!channel_->Writable()) {
@@ -57,7 +57,7 @@ void lizlib::TcpConnection::handleWrite() {
 
   if (output_.ReadableBytes() == 0) {
     channel_->SetWritable(false);
-    handler_->OnWriteComplete(Timestamp::Now());
+    handler_->OnWriteComplete(GetChannelContext(), Timestamp::Now());
     if (state_ == TcpState::kDisconnecting) {
       channel_->Shutdown(false);
     }
@@ -76,7 +76,7 @@ void lizlib::TcpConnection::handleClose() {
 void lizlib::TcpConnection::handleRemove() {
   ASSERT_FATAL(state_ == TcpState::kDisconnected, "remove while not disconnected");
 
-  handler_->OnClose(Timestamp::Now());
+  handler_->OnClose(GetChannelContext(), Timestamp::Now());
   context_->conn_ = nullptr;
 }
 
@@ -181,10 +181,4 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer) {
     ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
     channel_->SetWritable(true);
   }
-}
-lizlib::Buffer& lizlib::ChannelContext::GetOutputBuffer() {
-  return conn_->output_;
-}
-lizlib::Buffer& lizlib::ChannelContext::GetInputBuffer() {
-  return conn_->input_;
 }
