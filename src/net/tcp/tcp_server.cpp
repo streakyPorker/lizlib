@@ -7,9 +7,9 @@
 #include <utility>
 #include "common/basic.h"
 namespace lizlib {
-class TcpServerInternalHandler final : public ChannelHandler {
+class TcpServerWrapper final : public ChannelHandler {
  public:
-  explicit TcpServerInternalHandler(TcpServer* server, ChannelHandler::Ptr custom_handler)
+  explicit TcpServerWrapper(TcpServer* server, ChannelHandler::Ptr custom_handler)
       : server_(server), custom_handler_(std::move(custom_handler)) {}
 
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
@@ -59,7 +59,7 @@ void lizlib::TcpServer::Start() {
 lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
   const ChannelHandler::Ptr& custom_handler) {
   return std::dynamic_pointer_cast<ChannelHandler>(
-    std::make_shared<TcpServerInternalHandler>(this, custom_handler));
+    std::make_shared<TcpServerWrapper>(this, custom_handler));
 }
 void lizlib::TcpServer::Close() {
   LOG_TRACE("TcpServer::Close() begin...");

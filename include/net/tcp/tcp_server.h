@@ -9,13 +9,13 @@
 #include "net/eventloop/event_loop_group.h"
 #include "net/tcp/tcp_connection.h"
 namespace lizlib {
-class TcpServerInternalHandler;
+class TcpServerWrapper;
 
 
 class TcpServer {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpServer);
-  friend class TcpServerInternalHandler;
+  friend class TcpServerWrapper;
 
   /**
    * Ctor of a TcpServer
