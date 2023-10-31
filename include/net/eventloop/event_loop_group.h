@@ -21,6 +21,7 @@ class EventLoopGroup final : public Executor {
   }
 
   EventLoop* Next() { return &loops_[next()]; }
+  EventLoop* CurrentPosLoop() { return &loops_[next_.load(std::memory_order_relaxed)]; }
 
   void Submit(const Runnable& runnable) override;
   void Join() override { handleJoin(); };

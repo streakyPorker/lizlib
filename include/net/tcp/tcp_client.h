@@ -29,24 +29,20 @@ class TcpClient {
 
   [[nodiscard]] TcpConnection::Ptr GetConnection() const noexcept { return conn_; }
 
-  [[nodiscard]] EventLoop* GetEventLoop() const noexcept { return eventloop_; }
+  [[nodiscard]] EventLoop* GetEventLoop() const noexcept { return worker_group_->CurrentPosLoop(); }
 
   void Start();
   void Close();
-  void Shutdown();
+  void Shutdown(bool close_read = false);
   void ForceClose();
   void ForceShutdown();
 
-  void Send(std::string message);
-  void Send(std::string_view message);
-  void Send(Buffer& message);
+  void Send(const std::string& message) { conn_->Send(message); };
+  void Send(std::string_view message) { conn_->Send(message); };
+  void Send(Buffer* message) { conn_->Send(message); };
 
  private:
-  void tryConnect(){
-
-  }
-
-
+  void tryConnect(Socket client_socket);
 
   ChannelHandler::Ptr generateInternalHandler(const ChannelHandler::Ptr& custom_handler);
 
@@ -57,8 +53,6 @@ class TcpClient {
   ChannelHandler::Ptr internal_handler_{nullptr};
 
   std::atomic<TcpClientState> state_{TcpClientState::kOffline};
-
-  EventLoop* eventloop_{};
 };
 }  // namespace lizlib
 

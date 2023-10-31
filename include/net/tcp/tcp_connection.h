@@ -11,8 +11,6 @@
 
 namespace lizlib {
 
-
-
 enum class TcpState { kConnected, kDisconnected, kConnecting, kDisconnecting };
 
 /**
@@ -35,7 +33,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     ASSERT_FATAL(loop != nullptr, "invalid eventloop detected");
   }
 
-  ~TcpConnection() = default;
+  ~TcpConnection() { ForceClose(); };
 
   auto GetChannelContext() noexcept { return context_; }
 
@@ -59,7 +57,10 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
  * should check state to see if Close() succeeded
  */
   void Close();
-  void Shutdown();
+  /**
+   * Shutdown first, then Close
+   */
+  void Shutdown(bool close_read);
   void ForceShutdown();
   void ForceClose();
 

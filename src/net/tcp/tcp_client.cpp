@@ -49,38 +49,41 @@ void lizlib::TcpClient::Start() {
   if (!state_.compare_exchange_strong(desired, TcpClientState::kConnecting)) {
     return;
   }
-  eventloop_ = worker_group_->Next();
 
   Socket client_socket = Socket::Create(dest_address_.Family(), true);
   client_socket.ApplySettingOption();
-  Status status = client_socket.Connect(dest_address_);
-  //  if (status.OK()) {
-  //    auto conn = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(client_socket));
-  //    conn->Start();
-  //    conn_ = conn;
-  //    internal_handler_->OnConnect(conn_->GetChannelContext(), Timestamp::Now());
-  //  }
+  tryConnect(std::move(client_socket));
+}
 
+void lizlib::TcpClient::tryConnect(Socket client_socket) {
+
+  Status status = client_socket.Connect(dest_address_);
   switch (status.Code()) {
     case 0:
     case EINPROGRESS:
     case EINTR:
     case EISCONN: {
+      auto desired = TcpClientState::kConnecting;
+      if (!state_.compare_exchange_strong(desired, TcpClientState::kConnected,
+                                          std::memory_order_acq_rel)) {
+        return;
+      }
       conn_ = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(client_socket));
+      conn_->SetHandler(internal_handler_);
       conn_->Start();
-      internal_handler_->OnConnect(conn_->GetChannelContext(), Timestamp::Now());
       return;
     }
-
     case EAGAIN:
-    case EADDRINUSE:
     case EADDRNOTAVAIL:
     case ECONNREFUSED:
     case ENETUNREACH:
-      //      retry(std::move(socket), err);
+      //      retry(std::move(client_socket), err);
+      worker_group_->SubmitDelay([this, &client_socket]() { tryConnect(std::move(client_socket)); },
+                                 Duration::FromMilliSecs(kTcpRetryConnectDelayMs));
       return;
 
     case EACCES:
+    case EADDRINUSE:
     case EPERM:
     case EAFNOSUPPORT:
     case EALREADY:
@@ -89,9 +92,26 @@ void lizlib::TcpClient::Start() {
     case ENOTSOCK:
       LOG_ERROR("known error: {}", status);
       break;
-
     default:
       LOG_ERROR("unexpected connection error: {}", status);
       break;
+  }
+}
+void lizlib::TcpClient::Close() {
+  auto desired = TcpClientState::kConnected;
+  if (state_.compare_exchange_strong(desired, TcpClientState::kDisconnecting)) {
+    return;
+  }
+  if (conn_) {
+    conn_->Close();  // once connection closed, stata_ will be set to disconnected in OnClose
+  }
+}
+void lizlib::TcpClient::Shutdown(bool close_read) {
+  auto desired = TcpClientState::kConnected;
+  if (state_.compare_exchange_strong(desired, TcpClientState::kDisconnecting)) {
+    return;
+  }
+  if (conn_) {
+    conn_->Shutdown(close_read);
   }
 }

@@ -83,7 +83,6 @@ void lizlib::TcpConnection::handleClose() {
 
 void lizlib::TcpConnection::handleRemove() {
   ASSERT_FATAL(state_ == TcpState::kDisconnected, "remove while not disconnected");
-
   handler_->OnClose(GetChannelContext(), Timestamp::Now());
   context_->conn_ = nullptr;
 }
@@ -103,17 +102,17 @@ void lizlib::TcpConnection::Close() {
     }
   });
 }
-void lizlib::TcpConnection::Shutdown() {
+void lizlib::TcpConnection::Shutdown(bool close_read) {
   auto desired = TcpState::kConnected;
   if (!state_.compare_exchange_strong(desired, TcpState::kDisconnecting)) {
     LOG_WARN("Shutting down a connection while it's not connected won't help")
     return;
   }
-  loop_->Submit([this]() {
+  loop_->Submit([this, close_read]() {
     if (output_.ReadableBytes() == 0) {
       LOG_TRACE("{}::Shutdown()", *this);
       channel_->SetWritable(false);
-      channel_->Shutdown(false);
+      channel_->Shutdown(close_read);
     }
   });
 }
