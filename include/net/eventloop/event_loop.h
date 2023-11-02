@@ -51,7 +51,7 @@ class EventLoop : public Executor {
    * @param cb
    * @param mode
    */
-  void AddChannel(const lizlib::Channel::Ptr& channel, const lizlib::Callback& cb,
+  void AddChannel(Channel::Ptr channel, const lizlib::Callback& cb,
                   const SelectEvents& mode = SelectEvents::kNoneEvent);
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);

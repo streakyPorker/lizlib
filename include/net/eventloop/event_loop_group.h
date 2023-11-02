@@ -35,7 +35,7 @@ class EventLoopGroup final : public Executor {
   size_t next() noexcept;
   void handleJoin();
 
-  EventLoop timer_scheduler_;
+  EventScheduler::Ptr timer_scheduler_;
   std::atomic_size_t next_;
   const size_t size_;
   std::vector<EventLoop> loops_;

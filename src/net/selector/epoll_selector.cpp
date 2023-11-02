@@ -57,3 +57,10 @@ void lizlib::EpollSelector::internalUpdate(lizlib::Channel* channel, int epoll_o
 size_t lizlib::EpollSelector::Size() {
   return epoll_events_.size();
 }
+int lizlib::EpollSelector::createEpollFd() {
+  int epoll_fd = ::epoll_create1(EPOLL_CLOEXEC);
+  if (epoll_fd == -1) {
+    LOG_FATAL("create epoll fd failed : {}", Status::FromErr());
+  }
+  return epoll_fd;
+}

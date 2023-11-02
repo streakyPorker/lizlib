@@ -32,7 +32,6 @@
     };                                                                                  \
   }
 
-
 #define LIZ_DISABLE_MOVE(T) \
   T(T&&) noexcept = delete; \
   T& operator=(T&&) noexcept = delete
@@ -118,7 +117,7 @@ struct Duration : Comparable<Duration> {
   static Duration Zero() { return Duration{0}; }
   static Duration FromSecs(int64_t seconds) { return Duration{seconds * 1'000'000}; }
   static Duration FromMilliSecs(uint64_t millis) {
-    return Duration{static_cast<int64_t>(millis * 1'000)};
+    return Duration{static_cast<int64_t>(millis * 1000L)};
   }
   static Duration FromMicroSecs(int64_t micros) { return Duration{micros}; }
 

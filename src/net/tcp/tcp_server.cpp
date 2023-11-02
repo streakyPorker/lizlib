@@ -64,7 +64,6 @@ lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
 void lizlib::TcpServer::Close() {
   LOG_TRACE("TcpServer::Close() begin...");
   acceptor_->Close();
-
   std::unique_lock<std::mutex> unique_lock{mu_};
   for (const auto& conn : conns_) {
     conn->Close();

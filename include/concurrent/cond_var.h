@@ -26,13 +26,21 @@ class CondVar {
     std::unique_lock<std::mutex> lock(*mu_);
     cv_->wait_until(lock, std::chrono::steady_clock::now() + duration.ChronoMicroSec());
   }
-  void NotifyOne() {
-    std::unique_lock<std::mutex> lock(*mu_);
-    cv_->notify_one();
+  void NotifyOne(bool lock_held = false) {
+    if (lock_held) {
+      cv_->notify_one();
+    } else {
+      std::unique_lock<std::mutex> lock(*mu_);
+      cv_->notify_one();
+    }
   }
-  void NotifyAll() {
-    std::unique_lock<std::mutex> lock(*mu_);
-    cv_->notify_all();
+  void NotifyAll(bool lock_held) {
+    if (lock_held) {
+      cv_->notify_all();
+    } else {
+      std::unique_lock<std::mutex> lock(*mu_);
+      cv_->notify_all();
+    }
   }
   std::mutex* GetMutex() { return mu_; }
 

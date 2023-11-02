@@ -34,13 +34,7 @@ class EpollSelector final : public Selector {
   UnorderedCMap<Channel*, uint32_t> register_map_;
   void internalUpdate(Channel*, int epoll_op, const SelectEvents& select_events);
 
-  static int createEpollFd() {
-    int epoll_fd = ::epoll_create1(EPOLL_CLOEXEC);
-    if (epoll_fd == -1) {
-      LOG_FATAL("create epoll fd failed : {}", Status::FromErr());
-    }
-    return epoll_fd;
-  }
+  static int createEpollFd();
 };
 }  // namespace lizlib
 

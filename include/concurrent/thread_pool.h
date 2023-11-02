@@ -6,7 +6,6 @@
 #define LIZLIB_THREAD_POOL_H
 
 #include <sys/epoll.h>
-#include <utility>
 #include "common/basic.h"
 #include "common/logger.h"
 #include "concurrent/executor.h"
@@ -54,7 +53,6 @@ class EventScheduler {
   friend class ThreadPool;
   explicit EventScheduler(uint32_t event_buf_size);
   void Join();
-
   void schedulerWorkerRoutine();
 
   ~EventScheduler() { Join(); }
@@ -81,7 +79,7 @@ class ThreadPool final : public Executor {
   ~ThreadPool() { Join(); }
 
   template <typename Func, typename... Args>
-  auto Submit(Func&& func, Args&&... args) -> std::future<decltype(func(args...))> {
+  auto SubmitWithFuture(Func&& func, Args&&... args) -> std::future<decltype(func(args...))> {
     using ReturnType = decltype(func(args...));
     using namespace std::chrono_literals;
     auto task = std::make_shared<std::packaged_task<ReturnType()>>(

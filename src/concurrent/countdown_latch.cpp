@@ -17,7 +17,7 @@ void lizlib::CountdownLatch::CountDown() {
     }
   }
   if (read_count == 0) {
-    cv_.NotifyAll();
+    cv_.NotifyAll(false);
   }
 }
 bool lizlib::CountdownLatch::Await(const lizlib::Duration& timeout) {

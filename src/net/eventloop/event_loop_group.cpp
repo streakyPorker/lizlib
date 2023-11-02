@@ -26,8 +26,10 @@ void lizlib::EventLoopGroup::handleJoin() {
   }
 }
 lizlib::EventLoopGroup::EventLoopGroup(size_t loop_size)
-    : timer_scheduler_{std::make_shared<EventScheduler>(config::kEpollEventPoolSize)},
+    : timer_scheduler_{std::move(std::make_shared<EventScheduler>(config::kEpollEventPoolSize))},
       size_(loop_size),
       next_(0) {
-  loops_.emplace_back(std::move(timer_scheduler_));
+  for (int i = 0; i < size_; i++) {
+    loops_.emplace_back(timer_scheduler_);
+  }
 }

@@ -54,7 +54,29 @@ TEST(EventLoopTest, el_delay_test) {
   std::this_thread::sleep_for(6s);
 }
 
-TEST(EventLoopTest, elg_test) {
+TEST(EventLoopTest, regression_test) {
+  ThreadPool pool{1};
+  pool.Submit([]() {
+    fmt::println("here");
+    std::cout.flush();
+  });
+  std::this_thread::sleep_for(1s);
+}
 
-  EventLoopGroup elg{10};
+TEST(EventLoopTest, elg_test) {
+  EventLoopGroup elg{2};
+  elg.Next()->Submit([]() {
+    fmt::println("here");
+    std::cout.flush();
+  });
+  elg.Next()->Submit([]() {
+    fmt::println("here");
+    std::cout.flush();
+  });
+  elg.Next()->Submit([]() {
+    fmt::println("here");
+    std::cout.flush();
+  });
+  std::this_thread::sleep_for(2s);
+  elg.Join();
 }

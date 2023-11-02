@@ -14,7 +14,7 @@ TEST(ThreadPoolTest, tpt1) {
   ThreadPool pool{1};
 
   for (int i = 0; i < 20; i++) {
-    pool.Submit(
+    pool.SubmitWithFuture(
       [&i](void* val) {
         std::cout << "work is running..." << std::endl;
         std::this_thread::sleep_for(200ms);
@@ -32,13 +32,13 @@ TEST(ThreadPoolTest, test_multi_pool_single_scheduler) {
   ThreadPool pool2{1, scheduler};
 
   for (int i = 0; i < 20; i++) {
-    pool1.Submit(
+    pool1.SubmitWithFuture(
       [&i](void* val) {
         std::cout << "work is running..." << std::endl;
         std::this_thread::sleep_for(200ms);
       },
       nullptr);
-    pool2.Submit(
+    pool2.SubmitWithFuture(
       [&i](void* val) {
         std::cout << "work is running..." << std::endl;
         std::this_thread::sleep_for(200ms);
@@ -57,7 +57,7 @@ TEST(ThreadPoolTest, tpt2) {
   ThreadPool pool{std::thread::hardware_concurrency()};
 
   for (int i = 0; i < 20 * 20; i++) {
-    pool.Submit(
+    pool.SubmitWithFuture(
       [&i](void* val) {
         std::cout << "work is running..." << std::endl;
         std::this_thread::sleep_for(200ms);
