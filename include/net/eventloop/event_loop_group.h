@@ -20,8 +20,10 @@ class EventLoopGroup final : public Executor {
     (executor->Join(), ...);
   }
 
-  EventLoop* Next() { return &loops_[next()]; }
-  EventLoop* CurrentPosLoop() { return &loops_[next_.load(std::memory_order_relaxed)]; }
+  EventLoop* Next() { return dynamic_cast<EventLoop*>(loops_[next()].get()); }
+  EventLoop* CurrentPosLoop() {
+    return dynamic_cast<EventLoop*>(loops_[next_.load(std::memory_order_relaxed)].get());
+  }
 
   void Submit(const Runnable& runnable) override;
   void Join() override { handleJoin(); };
@@ -38,7 +40,7 @@ class EventLoopGroup final : public Executor {
   EventScheduler::Ptr timer_scheduler_;
   std::atomic_size_t next_;
   const size_t size_;
-  std::vector<EventLoop> loops_;
+  std::vector<EventLoop::Ptr> loops_;
 };
 }  // namespace lizlib
 

@@ -20,7 +20,7 @@ lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddre
       auto err = socket_channel_->Accept(&remote, &socket);
       if (!err.OK()) {
         if (err.Code() == EAGAIN || err.Code() == EWOULDBLOCK) {
-          break ;
+          break;
         }
         LOG_ERROR("failed to accept [{}]", err);
         continue;

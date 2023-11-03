@@ -26,14 +26,14 @@ class EventLoop : public Executor {
 
   EventLoop(EventLoop&& other) noexcept : EventLoop(other.getTimeScheduler()) {}
 
-  //  template <typename Runnable>
-  //  void Run(Runnable&& runnable) {
-  //    if (current() == this) {
-  //      runnable();
-  //      return;
-  //    }
-  //    Schedule(std::forward<Runnable>(runnable));
-  //  }
+    template <typename Runnable>
+    void Run(Runnable&& runnable) {
+      if (current() == this) {
+        runnable();
+        return;
+      }
+      Schedule(std::forward<Runnable>(runnable));
+    }
 
   Selector* GetSelector() noexcept;
 

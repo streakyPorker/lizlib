@@ -26,7 +26,6 @@ void lizlib::TcpConnection::Start() {
       // already connected
       return;
     }
-
     self->handler_->OnConnect(self->GetChannelContext(), Timestamp::Now());
     self->channel_->SetReadable(true);
   });

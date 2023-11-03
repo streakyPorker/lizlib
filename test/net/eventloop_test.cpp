@@ -43,14 +43,18 @@ TEST(EventLoopTest, basic_dummy_test) {
 }
 TEST(EventLoopTest, el_delay_test) {
   EventLoop loop{};
-  loop.SubmitDelay([]() {
-    fmt::println("delayed task");
-    std::cout.flush();
-  },1s);
-  loop.SubmitEvery([]() {
-    fmt::println("every task");
-    std::cout.flush();
-  },2s,800ms);
+  loop.SubmitDelay(
+    []() {
+      fmt::println("delayed task");
+      std::cout.flush();
+    },
+    1s);
+  loop.SubmitEvery(
+    []() {
+      fmt::println("every task");
+      std::cout.flush();
+    },
+    2s, 800ms);
   std::this_thread::sleep_for(6s);
 }
 
@@ -64,7 +68,7 @@ TEST(EventLoopTest, regression_test) {
 }
 
 TEST(EventLoopTest, elg_test) {
-  EventLoopGroup elg{2};
+  EventLoopGroup elg{3};
   elg.Next()->Submit([]() {
     fmt::println("here");
     std::cout.flush();

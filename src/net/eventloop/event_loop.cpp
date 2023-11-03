@@ -23,7 +23,6 @@ void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Du
 void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
                                       const lizlib::Callback& cb, bool unbind_executor) {
 
-
   if (current() != this) {
     Submit([=]() mutable { RemoveChannel(channel, cb); });
   } else {
@@ -52,10 +51,8 @@ void lizlib::EventLoop::AddChannel(lizlib::Channel::Ptr channel, const lizlib::C
   }
 }
 lizlib::EventLoop::EventLoop(const lizlib::EventScheduler::Ptr& scheduler) : pool_{1, scheduler} {
-  pool_.Submit([this]() {
-    current() = this;
-    LOG_TRACE("EventLoop Created and Bound");
-  });
+  LOG_TRACE("EventLoop Created");
+  pool_.Submit([this]() { current() = this; });
 }
 lizlib::Selector* lizlib::EventLoop::GetSelector() noexcept {
   return &pool_.GetEventScheduler()->epoll_selector_;
