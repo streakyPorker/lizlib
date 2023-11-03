@@ -28,11 +28,11 @@ void lizlib::EpollSelector::Update(const Channel::Ptr& channel, lizlib::SelectEv
 }
 lizlib::Status lizlib::EpollSelector::Wait(lizlib::Duration timeout,
                                            lizlib::SelectedChannels* selected) {
+
   int count =
     ::epoll_wait(fd_, epoll_events_.data(), (int)epoll_events_.size(), (int)timeout.MilliSec());
   if (count < 0) {
-    LOG_WARN("{}'s epoll_wait turns out abnormal, return count = {}", *this,count);
-    epoll_events_.clear();
+    LOG_WARN("{}'s epoll_wait turns out abnormal, return count = {}", *this, count);
     return Status::FromErr();
   }
   selected->occur_ts = Timestamp::Now();

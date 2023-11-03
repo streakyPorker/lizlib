@@ -51,7 +51,7 @@ lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote, lizlib::Socke
   socklen_t len;
   Socket gen = Socket{::accept4(fd_, remote->Data(), &len, SOCK_NONBLOCK | SOCK_CLOEXEC)};
   if (!gen.Valid()) {
-    LOG_ERROR("{} failed to accept", fd_);
+    LOG_ERROR("Socket {} failed to accept", fd_);
     return Status::FromErr();
   }
   if (len == sizeof(sockaddr_in)) {

@@ -141,8 +141,6 @@ void lizlib::EventScheduler::schedulerWorkerRoutine() {
       epoll_selector_.Wait(Duration::FromMilliSecs(config::kSelectTimeoutMilliSecs), &results_);
     if (!rst.OK()) {
       if (rst.Code() == EINTR) {
-        LOG_TRACE("timeout")
-        std::cout.flush();
         continue;
       }
       LOG_FATAL("epoll wait failed : {}", rst);

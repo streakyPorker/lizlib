@@ -20,7 +20,7 @@ class Timestamp;
     if (log_level <= Level::kTrace) {                                                     \
       fmt::print("[TRACE] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), __LINE__); \
       fmt::println(__VA_ARGS__);                                                          \
-      /*std::cout.flush(); */                                                             \
+      std::cout.flush();                                                                  \
     }                                                                                     \
   } while (0);
 
@@ -34,6 +34,7 @@ class Timestamp;
     if (log_level <= Level::kDebug) {                                                     \
       fmt::print("[DEBUG] {} {}:{} ", Timestamp::Now(), std::string(__FILE__), __LINE__); \
       fmt::println(__VA_ARGS__);                                                          \
+      std::cout.flush();                                                                  \
     }                                                                                     \
   } while (0);
 

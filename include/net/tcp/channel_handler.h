@@ -27,11 +27,21 @@ class ChannelHandlerAdaptor : public ChannelHandler {
  public:
   using Ptr = std::shared_ptr<ChannelHandlerAdaptor>;
   ChannelHandlerAdaptor() = default;
-  void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {}
-  void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {}
-  void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {}
-  void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {}
-  void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {}
+  void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
+    LOG_TRACE("OnRead");
+  }
+  void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
+    LOG_TRACE("OnWriteComplete");
+  }
+  void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {
+    LOG_TRACE("OnError");
+  }
+  void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {
+    LOG_TRACE("OnConnect");
+  }
+  void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {
+    LOG_TRACE("OnClose");
+  }
 };
 
 

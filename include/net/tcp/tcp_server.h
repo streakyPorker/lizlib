@@ -11,7 +11,6 @@
 namespace lizlib {
 class TcpServerWrapper;
 
-
 class TcpServer {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(TcpServer);
@@ -28,10 +27,10 @@ class TcpServer {
             const ChannelHandler::Ptr& custom_handler)
       : boss_group_{std::move(boss)},
         worker_group_{std::move(worker)},
-        acceptor_{std::move(std::make_unique<Acceptor>(boss_group_->Next(), address))},
+        acceptor_{boss_group_->Next(), address},
         internal_handler_{generateInternalHandler(custom_handler)} {
     LOG_TRACE("TcpServer init...");
-    acceptor_->Bind();
+    acceptor_.Bind();
   }
 
   ~TcpServer() { Close(); }
@@ -46,8 +45,6 @@ class TcpServer {
   void Start();
   void Close();
 
-
-
  private:
   ChannelHandler::Ptr generateInternalHandler(const ChannelHandler::Ptr& custom_handler);
 
@@ -57,7 +54,7 @@ class TcpServer {
   ChannelHandler::Ptr internal_handler_{nullptr};
 
   std::mutex mu_;
-  const Acceptor::Ptr acceptor_;
+  Acceptor acceptor_;
   std::unordered_set<TcpConnection::Ptr> conns_;
 };
 

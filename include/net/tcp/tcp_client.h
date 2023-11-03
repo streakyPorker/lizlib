@@ -38,7 +38,6 @@ class TcpClient {
   void ForceShutdown();
 
   void Send(const std::string& message) { conn_->Send(message); };
-  void Send(std::string_view message) { conn_->Send(message); };
   void Send(Buffer* message) { conn_->Send(message); };
 
  private:

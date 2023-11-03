@@ -23,8 +23,9 @@ void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Du
 void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
                                       const lizlib::Callback& cb, bool unbind_executor) {
 
+
   if (current() != this) {
-    Submit([&]() mutable { RemoveChannel(channel, cb); });
+    Submit([=]() mutable { RemoveChannel(channel, cb); });
   } else {
     LOG_TRACE("EventLoop::RemoveChannel({})", *channel);
     GetSelector()->Remove(channel);
@@ -40,7 +41,7 @@ void lizlib::EventLoop::AddChannel(lizlib::Channel::Ptr channel, const lizlib::C
                                    const SelectEvents& mode) {
 
   if (current() != this) {
-    Submit([&]() mutable { AddChannel(channel, cb, mode); });
+    Submit([=]() mutable { AddChannel(std::move(channel), cb, mode); });
   } else {
     LOG_TRACE("EventLoop::AddChannel({})", *channel);
     GetSelector()->Add(channel, mode);

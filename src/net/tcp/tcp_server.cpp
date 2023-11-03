@@ -44,7 +44,7 @@ class TcpServerWrapper final : public ChannelHandler {
 
 void lizlib::TcpServer::Start() {
   LOG_TRACE("TcpServer::Start() begin...");
-  acceptor_->OnAccept([this](Socket socket) {
+  acceptor_.OnAccept([this](Socket socket) {
     LOG_TRACE("TcpServer::OnAccept({})", socket);
     socket.ApplySettingOption();
     auto conn = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(socket));
@@ -53,7 +53,7 @@ void lizlib::TcpServer::Start() {
     conn->Start();
   });
 
-  acceptor_->Listen();
+  acceptor_.Listen();
   LOG_TRACE("TcpServer::Start() end...");
 }
 lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
@@ -63,7 +63,7 @@ lizlib::ChannelHandler::Ptr lizlib::TcpServer::generateInternalHandler(
 }
 void lizlib::TcpServer::Close() {
   LOG_TRACE("TcpServer::Close() begin...");
-  acceptor_->Close();
+  acceptor_.Close();
   std::unique_lock<std::mutex> unique_lock{mu_};
   for (const auto& conn : conns_) {
     conn->Close();
