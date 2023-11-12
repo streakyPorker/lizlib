@@ -15,7 +15,7 @@ class Executor {
   virtual void Submit(const Runnable& runnable) = 0;
   virtual void Join() = 0;
   [[nodiscard]] virtual size_t Size() const noexcept = 0;
-  virtual void SubmitDelay(const Runnable& runnable, Duration delay) = 0;
+  virtual void SubmitAfter(const Runnable& runnable, Duration delay) = 0;
   virtual void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) = 0;
 
  protected:
@@ -27,7 +27,7 @@ class SelfExecutor final : Executor {
   void Submit(const Runnable& runnable) override { runnable(); }
   void Join() override {}
   [[nodiscard]] size_t Size() const noexcept override { return 1; }
-  void SubmitDelay(const Runnable& runnable, Duration delay) override {
+  void SubmitAfter(const Runnable& runnable, Duration delay) override {
     std::this_thread::sleep_for(delay.ChronoMicroSec());
     runnable();
   }

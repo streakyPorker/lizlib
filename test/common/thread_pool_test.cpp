@@ -109,5 +109,5 @@ TEST(ThreadPoolTest, test_every) {
 TEST(ThreadPoolTest, testDelay) {
   using namespace std::chrono_literals;
   ThreadPool threadPool{4};
-  threadPool.SubmitDelay([]() { fmt::println("here"); }, 1ms);
+  threadPool.SubmitAfter([]() { fmt::println("here"); }, 1ms);
 }

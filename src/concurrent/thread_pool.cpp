@@ -87,7 +87,7 @@ void lizlib::ThreadPool::Submit(const Runnable& runnable) {
   enqueueTask(runnable, Duration::Invalid(), Duration::Invalid());
 }
 
-void lizlib::ThreadPool::SubmitDelay(const lizlib::Runnable& runnable, lizlib::Duration delay) {
+void lizlib::ThreadPool::SubmitAfter(const Runnable& runnable, Duration delay) {
   enqueueTask(runnable, delay, Duration::Invalid());
 }
 void lizlib::ThreadPool::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Duration delay,
@@ -157,7 +157,7 @@ void lizlib::EventScheduler::Join() {
     if (thread_.joinable()) {
       thread_.join();
     }
-    LOG_TRACE("timer scheduler joined");
+    LOG_TRACE("Scheduler joined");
   }
 }
 lizlib::EventScheduler::EventScheduler(uint32_t event_buf_size)

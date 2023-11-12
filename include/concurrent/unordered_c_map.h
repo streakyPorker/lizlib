@@ -7,12 +7,16 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "common/basic.h"
+#include "common/logger.h"
 namespace lizlib {
 template <typename Key, typename Value>
 class UnorderedCMap {
  public:
   LIZ_DISABLE_COPY_AND_MOVE(UnorderedCMap);
   UnorderedCMap() = default;
+  ~UnorderedCMap() {
+    internal_.clear();
+  }
   void Put(const Key& key, const Value& value) {
     std::lock_guard<std::shared_mutex> lock(mutex_);
     internal_[key] = value;
@@ -31,6 +35,7 @@ class UnorderedCMap {
     std::lock_guard<std::shared_mutex> lock(mutex_);
     return internal_[key];
   }
+  std::unordered_map<Key, Value>& GetInternalMap() { return internal_; }
 
   Value& operator[](const Key& key) { return Get(key); }
 

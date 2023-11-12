@@ -14,11 +14,9 @@ class Channel;
 using Callback = std::function<void()>;
 using SelectorCallback = std::function<void(ReceiveEvents events, Timestamp)>;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
-using MessageCallback =
-  std::function<void(const TcpConnectionPtr&, Buffer&, Timestamp)>;
+using MessageCallback = std::function<void(const TcpConnectionPtr&, Buffer&, Timestamp)>;
 using WriteCompleteCallback = std::function<void(const TcpConnectionPtr&)>;
-using HighWatermarkCallback =
-  std::function<void(const TcpConnectionPtr&, size_t)>;
+using HighWatermarkCallback = std::function<void(const TcpConnectionPtr&, size_t)>;
 using ErrorCallback = std::function<void(const TcpConnectionPtr&, Status)>;
 using CloseCallback = std::function<void(const TcpConnectionPtr&)>;
 using ConnectionCallback = std::function<void(const TcpConnectionPtr&)>;

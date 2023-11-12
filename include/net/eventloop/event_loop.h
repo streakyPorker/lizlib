@@ -8,7 +8,9 @@
 #include <utility>
 #include "concurrent/executor.h"
 #include "concurrent/thread_pool.h"
+#include "event_queue.h"
 #include "net/callbacks.h"
+#include "net/channel/event_channel.h"
 #include "net/selector/selector.h"
 
 namespace lizlib {
@@ -24,7 +26,7 @@ class EventLoop : public Executor {
 
   explicit EventLoop(const EventScheduler::Ptr& scheduler);
 
-  EventLoop(EventLoop&& other) noexcept : EventLoop(other.getTimeScheduler()) {}
+  EventLoop(EventLoop&& other) noexcept : EventLoop(other.getScheduler()) {}
 
     template <typename Runnable>
     void Run(Runnable&& runnable) {
@@ -38,9 +40,9 @@ class EventLoop : public Executor {
   Selector* GetSelector() noexcept;
 
   void Submit(const Runnable& runnable) override;
-  void Join() override;
+  void Join() override { join(); };
   [[nodiscard]] inline size_t Size() const noexcept override { return 1; }
-  void SubmitDelay(const Runnable& runnable, Duration delay) override;
+  void SubmitAfter(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
   /**
@@ -56,15 +58,48 @@ class EventLoop : public Executor {
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 
-  ~EventLoop() { pool_.Join(); }
+  ~EventLoop() { join(); }
 
  private:
   static EventLoop*& current() {
     thread_local EventLoop* current = nullptr;
     return current;
   }
-  ThreadPool pool_;
-  EventScheduler::Ptr getTimeScheduler();
+
+  EventScheduler::Ptr getScheduler();
+
+  void loop() {
+    current() = this;
+    while (!cancel_signal_.load(std::memory_order_relaxed)) {
+      std::shared_ptr<Callback> work;
+      if (lfq_.Empty() || (work = lfq_.Pop()) == nullptr) {
+        loop_cv_.Wait();
+        continue;
+      }
+      ASSERT_FATAL(work != nullptr, "invalid work value");
+      (*work)();
+    }
+  }
+
+  void join() {
+    if (!cancel_signal_.load(std::memory_order_relaxed)) {
+      cancel_signal_.store(true, std::memory_order_release);
+      loop_cv_.NotifyAll(false);
+      if (thread_.joinable()) {
+        thread_.join();
+      }
+
+      // remove time channel
+
+      // scheduler_ and lfq_ will ~ after dtor
+    }
+  };
+
+  EventScheduler::Ptr scheduler_;
+  LockFreeQueue<Callback> lfq_;
+  CondVar loop_cv_;
+  std::atomic_bool cancel_signal_{false};
+  std::thread thread_;
 };
 }  // namespace lizlib
 
