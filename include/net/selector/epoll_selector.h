@@ -24,6 +24,16 @@ class EpollSelector final : public Selector {
   }
 
   ~EpollSelector() override {
+    auto& internal_map = register_map_.GetInternalMap();
+    std::vector<Channel::Ptr> left_channels;
+    left_channels.reserve(internal_map.size());
+    for (const auto& pair : internal_map) {
+      left_channels.emplace_back(pair.first);
+    }
+    for (auto& channel : left_channels) {
+      Remove(channel);
+    }
+
     ASSERT_FATAL(::close(fd_) == 0, "epoll selector failed to close : {}", Status::FromErr());
     LOG_TRACE("EpollSelector closed");
   }

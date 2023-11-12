@@ -66,8 +66,8 @@ TEST(EventLoopTest, el_delay_every_test) {
       fmt::println("every task");
       std::cout.flush();
     },
-    2s, 800ms);
-  std::this_thread::sleep_for(6s);
+    1s, 400ms);
+  std::this_thread::sleep_for(4s);
 }
 
 TEST(EventLoopTest, regression_test) {

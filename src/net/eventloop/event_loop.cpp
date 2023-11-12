@@ -14,7 +14,6 @@ void lizlib::EventLoop::SubmitAfter(const Runnable& runnable, Duration delay) {
   tc->SetCallback([runnable, this, tc]() mutable {
     if (!cancel_signal_.load(std::memory_order_relaxed) && runnable) {
       runnable();
-      fmt::println("tc ref count:{}", tc.use_count());
       // remove immediately for After tasks
       RemoveChannel(std::move(tc), nullptr, true);
     }
@@ -27,11 +26,9 @@ void lizlib::EventLoop::SubmitAfter(const Runnable& runnable, Duration delay) {
 void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Duration delay,
                                     lizlib::Duration interval) {
   TimerChannel::Ptr tc = std::make_shared<TimerChannel>(nullptr, this);
-  tc->SetCallback([runnable, this, tc]() mutable {
+  tc->SetCallback([runnable, this]() mutable {
     if (!cancel_signal_.load(std::memory_order_relaxed) && runnable) {
       runnable();
-    } else {
-      RemoveChannel(std::move(tc), nullptr, true);
     }
   });
   AddChannel(
