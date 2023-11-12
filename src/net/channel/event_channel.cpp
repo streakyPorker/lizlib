@@ -41,6 +41,6 @@ std::string lizlib::EventChannel::String() const {
 }
 
 void lizlib::EventChannel::WakeUp() {
-  Inner val = 1;
+  Inner val = 114514;
   file_.Write(&val, sizeof(val));
 }

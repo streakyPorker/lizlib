@@ -8,7 +8,9 @@
 #include <utility>
 #include "concurrent/executor.h"
 #include "concurrent/thread_pool.h"
+#include "event_queue.h"
 #include "net/callbacks.h"
+#include "net/channel/event_channel.h"
 #include "net/selector/selector.h"
 
 namespace lizlib {
@@ -24,7 +26,7 @@ class EventLoop : public Executor {
 
   explicit EventLoop(const EventScheduler::Ptr& scheduler);
 
-  EventLoop(EventLoop&& other) noexcept : EventLoop(other.getTimeScheduler()) {}
+  EventLoop(EventLoop&& other) noexcept : EventLoop(other.getScheduler()) {}
 
   //  template <typename Runnable>
   //  void Run(Runnable&& runnable) {
@@ -56,15 +58,37 @@ class EventLoop : public Executor {
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 
-  ~EventLoop() { pool_.Join(); }
+  ~EventLoop() { Join(); }
 
  private:
   static EventLoop*& current() {
     thread_local EventLoop* current = nullptr;
     return current;
   }
-  ThreadPool pool_;
-  EventScheduler::Ptr getTimeScheduler();
+
+  EventScheduler::Ptr getScheduler();
+
+  static EventChannel::Ptr generateEventChannel();
+
+  void loop() {
+    current() = this;
+    loop_cv_.Wait();
+    while (!cancel_signal_.load(std::memory_order_relaxed)) {
+      std::shared_ptr<Callback> work;
+      if (lfq_.Empty() || (work = lfq_.Pop()) == nullptr) {
+        loop_cv_.Wait();
+        continue;
+      }
+      ASSERT_FATAL(work != nullptr, "invalid work value");
+      (*work)();
+    }
+  }
+
+  EventScheduler::Ptr scheduler_;
+  LockFreeQueue<Callback> lfq_;
+  CondVar loop_cv_;
+  std::atomic_bool cancel_signal_{false};
+  std::thread thread_;
 };
 }  // namespace lizlib
 

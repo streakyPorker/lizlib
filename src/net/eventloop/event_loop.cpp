@@ -4,25 +4,20 @@
 
 #include "net/eventloop/event_loop.h"
 void lizlib::EventLoop::Submit(const lizlib::Runnable& runnable) {
-  if (current() == this) {
-    runnable();
-  } else {
-    pool_.Submit(runnable);
-  }
+  lfq_.Push(runnable, [this]() { loop_cv_.NotifyOne(false); });
 }
 void lizlib::EventLoop::Join() {
-  pool_.Join();
+  //  pool_.Join();
 }
 void lizlib::EventLoop::SubmitDelay(const lizlib::Runnable& runnable, lizlib::Duration delay) {
-  pool_.SubmitDelay(runnable, delay);
+  //  pool_.SubmitDelay(runnable, delay);
 }
 void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Duration delay,
                                     lizlib::Duration interval) {
-  pool_.SubmitEvery(runnable, delay, interval);
+  //  pool_.SubmitEvery(runnable, delay, interval);
 }
 void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
                                       const lizlib::Callback& cb, bool unbind_executor) {
-
 
   if (current() != this) {
     Submit([=]() mutable { RemoveChannel(channel, cb); });
@@ -51,15 +46,23 @@ void lizlib::EventLoop::AddChannel(lizlib::Channel::Ptr channel, const lizlib::C
     }
   }
 }
-lizlib::EventLoop::EventLoop(const lizlib::EventScheduler::Ptr& scheduler) : pool_{1, scheduler} {
-  pool_.Submit([this]() {
-    current() = this;
-    LOG_TRACE("EventLoop Created and Bound");
-  });
+
+//
+lizlib::EventLoop::EventLoop(const lizlib::EventScheduler::Ptr& scheduler)
+    : loop_cv_(), thread_([this]() { loop(); }) {
+  if (scheduler == nullptr) {
+    scheduler_ = std::move(std::make_shared<EventScheduler>(config::kEpollEventPoolSize));
+  } else {
+    scheduler_ = scheduler;
+  }
+  loop_cv_.NotifyAll(false);
 }
 lizlib::Selector* lizlib::EventLoop::GetSelector() noexcept {
-  return &pool_.GetEventScheduler()->epoll_selector_;
+  return &scheduler_->epoll_selector_;
 }
-lizlib::EventScheduler::Ptr lizlib::EventLoop::getTimeScheduler() {
-  return pool_.GetEventScheduler();
+lizlib::EventScheduler::Ptr lizlib::EventLoop::getScheduler() {
+  return scheduler_;
+}
+lizlib::EventChannel::Ptr lizlib::EventLoop::generateEventChannel() {
+  std::make_shared<EventChannel>(true, false, nullptr, []() {});
 }

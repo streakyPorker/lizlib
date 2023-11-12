@@ -2,27 +2,36 @@
 // Created by A on 2023/9/7.
 //
 
-#ifndef LIZLIB_LF_QUEUE_H
-#define LIZLIB_LF_QUEUE_H
+#ifndef LIZLIB_LOCK_FREE_QUEUE_H
+#define LIZLIB_LOCK_FREE_QUEUE_H
 
 #include <atomic>
+#include <functional>
+#include <memory>
 namespace lizlib {
+
 template <typename Element>
-class LFQueue {
+class LockFreeQueue {
  public:
-  LFQueue() : head_{nullptr}, tail_{nullptr} {}
+  using ElementPtr = std::shared_ptr<Element>;
+  LockFreeQueue() : head_{nullptr}, tail_{nullptr} {
+    static_assert(std::is_move_assignable_v<Element> && std::is_move_constructible_v<Element>);
+  }
 
   bool Empty() { return head_.load() == nullptr; }
 
-  void Push(const Element& element) {
-    Node* node = new Node{std::forward<Element>(element)};
+  void Push(Element element, const std::function<void()>& on_empty) {
+    Node* node = new Node{std::move(element)};
     while (true) {
       Node* tail_read = tail_.load();
 
       if (tail_read == nullptr) {  // deque empty
-        // CAS the head,if success, hard-set tail_read
-        if (head_.compare_exchange_strong(nullptr, node)) {
+        // CAS the head,if success, hard-set tail
+        if (head_.compare_exchange_strong(tail_read, node)) {
           tail_.store(node);
+          if (on_empty != nullptr) {
+            on_empty();
+          }
           return;
         }
       } else {
@@ -34,24 +43,26 @@ class LFQueue {
     }
   }
 
-  bool Pop(Element* out) {
+  std::shared_ptr<Element> Pop() {
     while (true) {
       Node* tail_read = tail_.load();
       if (tail_read == nullptr) {
-        return false;
+        return nullptr;
       }
       Node* head_read = head_.load();
       // only one node in the queue
       if (head_read == tail_read && tail_.compare_exchange_strong(tail_read, nullptr)) {
         head_.store(nullptr);
-        *out = tail_read->element;
-        return true;
+        auto ret = std::make_shared<Element>(std::move(head_read->element));
+        delete head_read;
+        return ret;
       }
 
       Node* head_next = head_read->next.load();
       if (head_next != nullptr && head_.compare_exchange_strong(head_read, head_next)) {
-        *out = head_read->element;
-        return true;
+        auto ret = std::make_shared<Element>(std::move(head_read->element));
+        delete head_read;
+        return ret;
       }
     }
   }
@@ -62,16 +73,12 @@ class LFQueue {
 
   struct Node {
     AtomicNodePtr next{nullptr};
-    union {
-      Element element;
-      Node* cur_ptr;
-    };
+    Element element;
     explicit Node(Element&& ele) : element{std::forward<Element>(ele)} {}
-    Node() : cur_ptr{this} {}
   };
 
   AtomicNodePtr head_, tail_;
 };
 
 }  // namespace lizlib
-#endif  //LIZLIB_LF_QUEUE_H
+#endif  //LIZLIB_LOCK_FREE_QUEUE_H
