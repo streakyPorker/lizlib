@@ -14,12 +14,12 @@ lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddre
   socket_channel_->SetSelector(eventloop_->GetSelector());
   socket_channel_->SetReadCallback([this](const ReceiveEvents& events, Timestamp now) {
     while (true) {
-      LOG_TRACE("{}::handleRead()", *this);
       Socket socket;
       InetAddress remote;
       auto err = socket_channel_->Accept(&remote, &socket);
       if (!err.OK()) {
         if (err.Code() == EAGAIN || err.Code() == EWOULDBLOCK) {
+          LOG_INFO("need to try again : {}", err);
           break;
         }
         LOG_ERROR("failed to accept [{}]", err);
@@ -28,6 +28,7 @@ lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddre
       if (acceptor_callback_) {
         acceptor_callback_(std::move(socket));
       }
+      break;
     }
   });
 }
@@ -45,9 +46,7 @@ void lizlib::Acceptor::Listen() {
 void lizlib::Acceptor::Close() {
   LOG_TRACE("Acceptor::Close() enter");
   CountdownLatch latch{1};
-  eventloop_->RemoveChannel(socket_channel_, [&] {
-    latch.CountDown();
-  });
+  eventloop_->RemoveChannel(socket_channel_, [&] { latch.CountDown(); });
   latch.Await();
   LOG_TRACE("Acceptor::Close() exit");
 }

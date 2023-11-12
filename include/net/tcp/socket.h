@@ -48,6 +48,20 @@ class Socket : public File {
     SetTcpNoDelay(kTcpOption.tcp_no_delay);
   }
 
+  [[nodiscard]] bool IsIpv6() const {
+    int v6only;
+    socklen_t option_len = sizeof(v6only);
+    if (getsockopt(fd_, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, &option_len) == 0) {
+      return v6only != 0;
+    }
+#ifdef IPV6_BINDV6ONLY
+    if (getsockopt(fd_, IPPROTO_IPV6, IPV6_BINDV6ONLY, &v6only, &option_len) == 0) {
+      return v6only != 0;
+    }
+#endif
+    return false;
+  }
+
   [[nodiscard]] InetAddress GetLocalAddress() const;
   [[nodiscard]] InetAddress GetPeerAddress() const;
 

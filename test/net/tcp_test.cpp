@@ -19,7 +19,7 @@ class ServerHandler : public ChannelHandlerAdaptor {
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
     ChannelHandlerAdaptor::OnRead(ctx, now, buffer);
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
-    fmt::println("!!!!!!!!!!!!!\n\n!!!!!!!!!!!!!!!!!!{}\n\n!!!!!!!!!!!!!!!!",data.c_str());
+    fmt::println("got data:{}", data.c_str());
   }
   void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
     ChannelHandlerAdaptor::OnWriteComplete(ctx, now);
@@ -35,6 +35,13 @@ class ServerHandler : public ChannelHandlerAdaptor {
   }
 };
 
+TEST(TcpTest, testSockSize) {
+  struct sockaddr a1;
+  struct sockaddr_in a2;
+  struct sockaddr_in6 a3;
+  fmt::println("{} {} {}", sizeof(a1), sizeof(a2), sizeof(a3));
+}
+
 TEST(TcpTest, server_test_1) {
 
   InetAddress server_addr{"127.0.0.1", 6666, false};
@@ -43,7 +50,7 @@ TEST(TcpTest, server_test_1) {
 
   TcpServer server{server_addr, boss, worker, std::make_shared<ServerHandler>()};
   server.Start();
-  std::this_thread::sleep_for(3s);
+  std::this_thread::sleep_for(2s);
 
   TcpClient client{server_addr, worker, std::make_shared<ChannelHandlerAdaptor>()};
   client.Start();

@@ -12,6 +12,11 @@
 #include "common/slice.h"
 namespace lizlib {
 
+struct AddressAcceptor {
+  char* Data() { return data; }
+  char data[sizeof(sockaddr_in6)];
+};
+
 class InetAddress {
  public:
   InetAddress() = default;
@@ -42,13 +47,16 @@ class InetAddress {
 
   [[nodiscard]] sockaddr* Data() { return reinterpret_cast<sockaddr*>(&impl_); }
   [[nodiscard]] const sockaddr* Data() const { return reinterpret_cast<const sockaddr*>(&impl_); }
-  [[nodiscard]] socklen_t Length() const { return sizeof(impl_); }
+  [[nodiscard]] socklen_t Length() const {
+    return ipv6_enabled_ ? sizeof(struct sockaddr_in6) : sizeof(sockaddr_in);
+  }
 
  private:
   /**
- * Noted that network data processing in linux is set to use big
- * endian format, so the stuffed data need to be transformed first, namely
- * htobexx
+   *
+   * Noted that network data processing in linux is set to use big
+   * endian format, so the stuffed data need to be transformed first, namely
+   * htobexx
  */
   union InetImpl {
     struct sockaddr_in6 in6;
@@ -56,9 +64,16 @@ class InetAddress {
   };
 
   friend class Socket;
+
+  void rebuild(bool ipv6) {
+    if(ipv6){
+
+    }
+  }
+
+  InetImpl impl_{};
   std::string host_;
   bool ipv6_enabled_{false};
-  InetImpl impl_{};
 };
 
 }  // namespace lizlib

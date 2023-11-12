@@ -8,7 +8,7 @@ lizlib::File& lizlib::SocketChannel::GetFile() {
   return *this;
 }
 void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {
-  LOG_TRACE("{} handling events_ {}", *this, events.String());
+  LOG_TRACE("{} handling events : {}", *this, events.String());
   if (events.ContainsAny(ReceiveEvents::kReadable, ReceiveEvents::kPriorReadable,
                          ReceiveEvents::kReadHangUp) &&
       read_callback_ != nullptr) {

@@ -45,8 +45,7 @@ TEST(EventLoopTest, el_delay_test) {
   EventLoop loop{};
   loop.SubmitAfter(
     []() {
-      fmt::println("delayed task");
-      std::cout.flush();
+      LOG_TRACE("delay task");
     },
     1ms);
   std::this_thread::sleep_for(1s);
@@ -82,16 +81,13 @@ TEST(EventLoopTest, regression_test) {
 TEST(EventLoopTest, elg_test) {
   EventLoopGroup elg{3};
   elg.Next()->Submit([]() {
-    fmt::println("here");
-    std::cout.flush();
+    LOG_TRACE("task here");
   });
   elg.Next()->Submit([]() {
-    fmt::println("here");
-    std::cout.flush();
+    LOG_TRACE("task here");
   });
   elg.Next()->Submit([]() {
-    fmt::println("here");
-    std::cout.flush();
+    LOG_TRACE("task here");
   });
   std::this_thread::sleep_for(2s);
   elg.Join();
