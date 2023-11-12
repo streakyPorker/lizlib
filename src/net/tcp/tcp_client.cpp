@@ -78,7 +78,7 @@ void lizlib::TcpClient::tryConnect(Socket client_socket) {
     case ECONNREFUSED:
     case ENETUNREACH:
       //      retry(std::move(client_socket), err);
-      worker_group_->SubmitDelay([this, &client_socket]() { tryConnect(std::move(client_socket)); },
+      worker_group_->SubmitAfter([this, &client_socket]() { tryConnect(std::move(client_socket)); },
                                  Duration::FromMilliSecs(kTcpRetryConnectDelayMs));
       return;
 

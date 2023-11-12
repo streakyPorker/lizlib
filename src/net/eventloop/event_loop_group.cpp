@@ -10,8 +10,8 @@ void lizlib::EventLoopGroup::Submit(const lizlib::Runnable& runnable) {
 size_t lizlib::EventLoopGroup::Size() const noexcept {
   return 0;
 }
-void lizlib::EventLoopGroup::SubmitDelay(const lizlib::Runnable& runnable, lizlib::Duration delay) {
-  Next()->SubmitDelay(runnable, delay);
+void lizlib::EventLoopGroup::SubmitAfter(const Runnable& runnable, Duration delay) {
+  Next()->SubmitAfter(runnable, delay);
 }
 void lizlib::EventLoopGroup::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Duration delay,
                                          lizlib::Duration interval) {

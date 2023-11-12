@@ -40,9 +40,9 @@ class EventLoop : public Executor {
   Selector* GetSelector() noexcept;
 
   void Submit(const Runnable& runnable) override;
-  void Join() override;
+  void Join() override { join(); };
   [[nodiscard]] inline size_t Size() const noexcept override { return 1; }
-  void SubmitDelay(const Runnable& runnable, Duration delay) override;
+  void SubmitAfter(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
   /**
@@ -58,7 +58,7 @@ class EventLoop : public Executor {
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
 
-  ~EventLoop() { Join(); }
+  ~EventLoop() { join(); }
 
  private:
   static EventLoop*& current() {
@@ -68,11 +68,8 @@ class EventLoop : public Executor {
 
   EventScheduler::Ptr getScheduler();
 
-  static EventChannel::Ptr generateEventChannel();
-
   void loop() {
     current() = this;
-    loop_cv_.Wait();
     while (!cancel_signal_.load(std::memory_order_relaxed)) {
       std::shared_ptr<Callback> work;
       if (lfq_.Empty() || (work = lfq_.Pop()) == nullptr) {
@@ -83,6 +80,20 @@ class EventLoop : public Executor {
       (*work)();
     }
   }
+
+  void join() {
+    if (!cancel_signal_.load(std::memory_order_relaxed)) {
+      cancel_signal_.store(true, std::memory_order_release);
+      loop_cv_.NotifyAll(false);
+      if (thread_.joinable()) {
+        thread_.join();
+      }
+
+      // remove time channel
+
+      // scheduler_ and lfq_ will ~ after dtor
+    }
+  };
 
   EventScheduler::Ptr scheduler_;
   LockFreeQueue<Callback> lfq_;

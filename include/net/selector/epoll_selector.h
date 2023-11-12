@@ -31,7 +31,7 @@ class EpollSelector final : public Selector {
  private:
   int fd_{-1};
   std::vector<struct epoll_event> epoll_events_;
-  UnorderedCMap<Channel*, uint32_t> register_map_;
+  UnorderedCMap<Channel::Ptr, uint32_t> register_map_;
   void internalUpdate(Channel*, int epoll_op, const SelectEvents& select_events);
 
   static int createEpollFd();

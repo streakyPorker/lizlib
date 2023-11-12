@@ -36,3 +36,21 @@ TEST(BasicTest, ctsTest) {
   fmt::println("{}",Rdtsc());
   fmt::println("{}",Rdtsc());
 }
+using namespace std::chrono_literals;
+struct A {
+  A() { fmt::println("A::A();"); }
+};
+
+struct B {
+  B() : b1(generateB1()) {}
+
+  static int generateB1() {
+    fmt::println("before or after A::A()???");
+    return 1;
+  }
+  A a;
+  int b1;
+};
+TEST(BasicTest, ctorCallTest) {
+  B b;
+}

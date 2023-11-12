@@ -27,30 +27,45 @@ TEST(EventLoopTest, basic_dummy_test) {
     loop.Submit([]() {
       fmt::println("here 1");
       std::cout.flush();
-      std::this_thread::sleep_for(5s);
       fmt::println("here 2");
       std::cout.flush();
     });
-    std::this_thread::sleep_for(6s);
+    std::atomic_int v = 0;
+    for (int i = 0; i < 10000000; i++) {
+      loop.Submit([&v]() { fmt::println("cur v is {}", v.fetch_add(1)); });
+    }
+
+    std::this_thread::sleep_for(2s);
     loop.Join();
   }
-
-  for (int i = 0; i < 10; i++) {
-    fmt::println("cnt");
-    std::cout.flush();
-    std::this_thread::sleep_for(1s);
-  }
 }
+
 TEST(EventLoopTest, el_delay_test) {
   EventLoop loop{};
-  loop.SubmitDelay([]() {
-    fmt::println("delayed task");
-    std::cout.flush();
-  },1s);
-  loop.SubmitEvery([]() {
-    fmt::println("every task");
-    std::cout.flush();
-  },2s,800ms);
+  loop.SubmitAfter(
+    []() {
+      fmt::println("delayed task");
+      std::cout.flush();
+    },
+    1ms);
+  std::this_thread::sleep_for(1s);
+  loop.Join();
+}
+
+TEST(EventLoopTest, el_delay_every_test) {
+  EventLoop loop{};
+  loop.SubmitAfter(
+    []() {
+      fmt::println("delayed task");
+      std::cout.flush();
+    },
+    1s);
+  loop.SubmitEvery(
+    []() {
+      fmt::println("every task");
+      std::cout.flush();
+    },
+    2s, 800ms);
   std::this_thread::sleep_for(6s);
 }
 

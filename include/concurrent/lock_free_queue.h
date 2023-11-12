@@ -18,6 +18,14 @@ class LockFreeQueue {
     static_assert(std::is_move_assignable_v<Element> && std::is_move_constructible_v<Element>);
   }
 
+  ~LockFreeQueue() {
+    while (head_ != nullptr) {
+      Node* next = head_.load()->next_;
+      free(head_.load());
+      head_ = next;
+    }
+  }
+
   bool Empty() { return head_.load() == nullptr; }
 
   void Push(Element element, const std::function<void()>& on_empty) {
@@ -36,7 +44,7 @@ class LockFreeQueue {
         }
       } else {
         if (tail_.compare_exchange_strong(tail_read, node)) {
-          tail_read->next.store(node);
+          tail_read->next_.store(node);
           return;
         }
       }
@@ -53,14 +61,14 @@ class LockFreeQueue {
       // only one node in the queue
       if (head_read == tail_read && tail_.compare_exchange_strong(tail_read, nullptr)) {
         head_.store(nullptr);
-        auto ret = std::make_shared<Element>(std::move(head_read->element));
+        auto ret = std::make_shared<Element>(std::move(head_read->element_));
         delete head_read;
         return ret;
       }
 
-      Node* head_next = head_read->next.load();
+      Node* head_next = head_read->next_.load();
       if (head_next != nullptr && head_.compare_exchange_strong(head_read, head_next)) {
-        auto ret = std::make_shared<Element>(std::move(head_read->element));
+        auto ret = std::make_shared<Element>(std::move(head_read->element_));
         delete head_read;
         return ret;
       }
@@ -72,9 +80,9 @@ class LockFreeQueue {
   using AtomicNodePtr = std::atomic<Node*>;
 
   struct Node {
-    AtomicNodePtr next{nullptr};
-    Element element;
-    explicit Node(Element&& ele) : element{std::forward<Element>(ele)} {}
+    AtomicNodePtr next_{nullptr};
+    Element element_;
+    explicit Node(Element&& ele) : element_{std::forward<Element>(ele)} {}
   };
 
   AtomicNodePtr head_, tail_;

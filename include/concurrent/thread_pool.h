@@ -90,7 +90,7 @@ class ThreadPool final : public Executor {
   };
   void Submit(const Runnable& runnable) override;
 
-  void SubmitDelay(const Runnable& runnable, Duration delay) override;
+  void SubmitAfter(const Runnable& runnable, Duration delay) override;
 
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 

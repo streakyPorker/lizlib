@@ -4,17 +4,39 @@
 
 #include "net/eventloop/event_loop.h"
 void lizlib::EventLoop::Submit(const lizlib::Runnable& runnable) {
-  lfq_.Push(runnable, [this]() { loop_cv_.NotifyOne(false); });
+  if (!cancel_signal_.load(std::memory_order_relaxed)) {
+    lfq_.Push(runnable, [this]() { loop_cv_.NotifyOne(false); });
+  }
 }
-void lizlib::EventLoop::Join() {
-  //  pool_.Join();
-}
-void lizlib::EventLoop::SubmitDelay(const lizlib::Runnable& runnable, lizlib::Duration delay) {
-  //  pool_.SubmitDelay(runnable, delay);
+
+void lizlib::EventLoop::SubmitAfter(const Runnable& runnable, Duration delay) {
+  TimerChannel::Ptr tc = std::make_shared<TimerChannel>(nullptr, this);
+  tc->SetCallback([runnable, this, tc]() mutable {
+    if (!cancel_signal_.load(std::memory_order_relaxed) && runnable) {
+      runnable();
+      fmt::println("tc ref count:{}", tc.use_count());
+      // remove immediately for After tasks
+      RemoveChannel(std::move(tc), nullptr, true);
+    }
+  });
+
+  AddChannel(
+    tc, [tc, delay]() { tc->SetTimer(delay, Duration::Invalid()); },
+    SelectEvents::kReadEvent.EdgeTrigger());
 }
 void lizlib::EventLoop::SubmitEvery(const lizlib::Runnable& runnable, lizlib::Duration delay,
                                     lizlib::Duration interval) {
-  //  pool_.SubmitEvery(runnable, delay, interval);
+  TimerChannel::Ptr tc = std::make_shared<TimerChannel>(nullptr, this);
+  tc->SetCallback([runnable, this, tc]() mutable {
+    if (!cancel_signal_.load(std::memory_order_relaxed) && runnable) {
+      runnable();
+    } else {
+      RemoveChannel(std::move(tc), nullptr, true);
+    }
+  });
+  AddChannel(
+    tc, [tc, delay, interval]() { tc->SetTimer(delay, interval); },
+    SelectEvents::kReadEvent.EdgeTrigger());
 }
 void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
                                       const lizlib::Callback& cb, bool unbind_executor) {
@@ -49,20 +71,16 @@ void lizlib::EventLoop::AddChannel(lizlib::Channel::Ptr channel, const lizlib::C
 
 //
 lizlib::EventLoop::EventLoop(const lizlib::EventScheduler::Ptr& scheduler)
-    : loop_cv_(), thread_([this]() { loop(); }) {
-  if (scheduler == nullptr) {
-    scheduler_ = std::move(std::make_shared<EventScheduler>(config::kEpollEventPoolSize));
-  } else {
-    scheduler_ = scheduler;
-  }
-  loop_cv_.NotifyAll(false);
-}
+    : scheduler_(scheduler == nullptr
+                   ? std::make_shared<EventScheduler>(config::kEpollEventPoolSize)
+                   : scheduler),
+      thread_([this]() {
+        current() = this;
+        loop();
+      }) {}
 lizlib::Selector* lizlib::EventLoop::GetSelector() noexcept {
   return &scheduler_->epoll_selector_;
 }
 lizlib::EventScheduler::Ptr lizlib::EventLoop::getScheduler() {
   return scheduler_;
-}
-lizlib::EventChannel::Ptr lizlib::EventLoop::generateEventChannel() {
-  std::make_shared<EventChannel>(true, false, nullptr, []() {});
 }

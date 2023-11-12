@@ -26,7 +26,7 @@ class EventLoopGroup final : public Executor {
   void Submit(const Runnable& runnable) override;
   void Join() override { handleJoin(); };
   [[nodiscard]] size_t Size() const noexcept override;
-  void SubmitDelay(const Runnable& runnable, Duration delay) override;
+  void SubmitAfter(const Runnable& runnable, Duration delay) override;
   void SubmitEvery(const Runnable& runnable, Duration delay, Duration interval) override;
 
   ~EventLoopGroup() { handleJoin(); }

@@ -15,7 +15,7 @@ class TimerChannel final : public Channel {
         file_(std::forward<File>(createTimerFile())),
         executor_{executor} {}
 
-  ~TimerChannel() override { LOG_TRACE("~TimerChannel"); };
+  ~TimerChannel() override { LOG_TRACE("~{}", String().c_str()); };
   File& GetFile() override;
   void HandleEvents(ReceiveEvents events, Timestamp now) override;
   [[nodiscard]] std::string String() const override;
@@ -37,5 +37,6 @@ class TimerChannel final : public Channel {
   static File createTimerFile();
 };
 }  // namespace lizlib
+LIZ_FORMATTER_REGISTRY(lizlib::TimerChannel);
 
 #endif  //LIZLIB_TIMER_CHANNEL_H
