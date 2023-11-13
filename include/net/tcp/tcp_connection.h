@@ -47,11 +47,15 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   void Start();
 
-  void Send(Buffer* buf);
+  void Send(Buffer* buf, bool flush = true);
 
-  void Send(const std::string& buffer);
+  void Send(const std::string& buffer, bool flush = true);
 
-  void Send(std::string_view buffer);
+  void Send(std::string_view buffer, bool flush = true);
+
+  void Flush() {}
+
+  SocketChannel::Ptr GetSocketChannel() { return channel_; };
 
   /**
  * should check state to see if Close() succeeded
@@ -72,7 +76,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   void handleWrite();
   void handleClose();
   void handleRemove();
-  void handleSend(std::string_view buffer);
+  void handleSend(std::string_view buffer,bool flush);
 
   std::atomic<TcpState> state_{TcpState::kConnecting};
 

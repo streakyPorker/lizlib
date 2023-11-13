@@ -17,12 +17,12 @@ class TestServerHandler : public ChannelHandlerAdaptor {
  public:
   ~TestServerHandler() override = default;
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
-    ChannelHandlerAdaptor::OnRead(ctx, now, buffer);
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
     fmt::println("got data:{}", data.c_str());
   }
   void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
-    ChannelHandlerAdaptor::OnWriteComplete(ctx, now);
+    LOG_TRACE("{}:{}->{} write complete", ctx->GetConnection()->GetSocketChannel()->GetFile(),
+              ctx->GetConnection()->GetLocalAddress(), ctx->GetConnection()->GetPeerAddress());
   }
   void OnError(ChannelContext::Ptr ctx, Timestamp now, Status err) override {
     ChannelHandlerAdaptor::OnError(ctx, now, err);
@@ -50,9 +50,9 @@ TEST(TcpTest, server_test_1) {
 
   TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();
-  std::this_thread::sleep_for(2500ms);
+  std::this_thread::sleep_for(500ms);
 
-  TcpClient client{server_addr, worker, std::make_shared<ChannelHandlerAdaptor>()};
+  TcpClient client{server_addr, worker, std::make_shared<TestServerHandler>()};
   client.Start();
   client.Send("asdrrr");
   client.Send("asdrrr");

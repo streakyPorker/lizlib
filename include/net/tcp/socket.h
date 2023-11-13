@@ -19,7 +19,7 @@ namespace lizlib {
 class Socket : public File {
  public:
   Socket() : Socket(-1) {}
-  //  LIZ_DISABLE_COPY(Socket);
+  LIZ_DISABLE_COPY(Socket);
   Socket(Socket&& other) noexcept : File(std::move(other)) {}
   Socket& operator=(Socket&& other) noexcept;
 

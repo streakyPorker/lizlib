@@ -78,11 +78,12 @@ lizlib::Status lizlib::TcpClient::tryConnect(Socket client_socket) {
     case EADDRNOTAVAIL:
     case ECONNREFUSED:
     case ENETUNREACH:
-      LOG_TRACE("need to retry connection to {}",client_socket);
+      LOG_TRACE("need to retry connection to {}", client_socket);
       worker_group_->SubmitAfter(
         [this, &client_socket]() mutable {
           LOG_TRACE("connect op retrying");
-          tryConnect(std::move(client_socket));
+          Socket own_sock = std::move(client_socket);
+          tryConnect(std::move(own_sock));
         },
         Duration::FromMilliSecs(kTcpRetryConnectDelayMs));
       return status;

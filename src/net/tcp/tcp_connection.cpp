@@ -6,9 +6,7 @@
 #include "concurrent/countdown_latch.h"
 void lizlib::TcpConnection::Start() {
   context_->SetConnection(this);
-  channel_->SetReadCallback([this](auto events, auto now) {
-    handleRead(now);
-  });
+  channel_->SetReadCallback([this](auto events, auto now) { handleRead(now); });
   channel_->SetWriteCallback([this](auto events, auto now) { handleWrite(); });
   channel_->SetCloseCallback([this](auto events, auto now) { handleClose(); });
   channel_->SetErrorCallback([this](auto events, auto now) { handleError(channel_->GetError()); });
@@ -25,7 +23,7 @@ void lizlib::TcpConnection::Start() {
     LOG_INFO("handleConnection {}", *self);
     TcpState desired = TcpState::kConnecting;
     if (!self->state_.compare_exchange_strong(desired, TcpState::kConnected,
-                                             std::memory_order_acq_rel)) {
+                                              std::memory_order_acq_rel)) {
       latch.CountDown();
       // already connected
       return;
@@ -140,7 +138,7 @@ void lizlib::TcpConnection::ForceClose() {
   state_ = TcpState::kDisconnected;
   loop_->Submit([self = shared_from_this()]() { self->handleRemove(); });
 }
-void lizlib::TcpConnection::Send(lizlib::Buffer* buf) {
+void lizlib::TcpConnection::Send(lizlib::Buffer* buf, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
     if (buf == &output_) {
       if (output_.ReadableBytes()) {
@@ -159,16 +157,17 @@ void lizlib::TcpConnection::Send(lizlib::Buffer* buf) {
     self->handleSend(clone);
   });
 }
-void lizlib::TcpConnection::Send(const std::string& buffer) {
+void lizlib::TcpConnection::Send(const std::string& buffer, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
     handleSend(buffer);
     return;
   }
+  LOG_TRACE("need to distribute write");
   loop_->Submit(
     [self = shared_from_this(), clone = std::string_view(buffer)] { self->handleSend(clone); });
 }
 
-void lizlib::TcpConnection::Send(std::string_view buffer) {
+void lizlib::TcpConnection::Send(std::string_view buffer, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
     handleSend(buffer);
     return;
@@ -176,7 +175,7 @@ void lizlib::TcpConnection::Send(std::string_view buffer) {
   // shallow copy here sine string_view itself is a non-owning object
   loop_->Submit([self = shared_from_this(), &buffer] { self->handleSend(buffer); });
 }
-void lizlib::TcpConnection::handleSend(std::string_view buffer) {
+void lizlib::TcpConnection::handleSend(std::string_view buffer,bool flush) {
   if (state_.load(std::memory_order_relaxed) != TcpState::kConnected) {
     LOG_TRACE("{}::{}: give up sending buffer", *this, __func__)
     return;
@@ -201,5 +200,4 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer) {
     ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
     channel_->SetWritable(true);
   }
-  channel_->SetWritable(true);
 }
