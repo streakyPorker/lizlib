@@ -13,9 +13,9 @@
 using namespace lizlib;
 using namespace std::chrono_literals;
 
-class ServerHandler : public ChannelHandlerAdaptor {
+class TestServerHandler : public ChannelHandlerAdaptor {
  public:
-  ~ServerHandler() override = default;
+  ~TestServerHandler() override = default;
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
     ChannelHandlerAdaptor::OnRead(ctx, now, buffer);
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
@@ -28,7 +28,7 @@ class ServerHandler : public ChannelHandlerAdaptor {
     ChannelHandlerAdaptor::OnError(ctx, now, err);
   }
   void OnConnect(ChannelContext::Ptr ctx, Timestamp now) override {
-    ChannelHandlerAdaptor::OnConnect(ctx, now);
+    LOG_TRACE("custom handle connection");
   }
   void OnClose(ChannelContext::Ptr ctx, Timestamp now) override {
     ChannelHandlerAdaptor::OnClose(ctx, now);
@@ -48,9 +48,9 @@ TEST(TcpTest, server_test_1) {
   EventLoopGroup::Ptr boss = std::make_shared<EventLoopGroup>(1);
   EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(2);
 
-  TcpServer server{server_addr, boss, worker, std::make_shared<ServerHandler>()};
+  TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();
-  std::this_thread::sleep_for(2s);
+  std::this_thread::sleep_for(2500ms);
 
   TcpClient client{server_addr, worker, std::make_shared<ChannelHandlerAdaptor>()};
   client.Start();

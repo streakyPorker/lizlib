@@ -51,6 +51,7 @@ void lizlib::TcpServer::Start() {
     // one proxy handler for all connections
     conn->SetHandler(internal_handler_);
     conn->Start();
+    ASSERT_FATAL(conn.use_count() == 2, "or the connection will be reclaimed");
   });
 
   acceptor_.Listen();

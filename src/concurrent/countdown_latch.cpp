@@ -12,7 +12,7 @@ void lizlib::CountdownLatch::CountDown() {
       break;
     }
     if (count_.compare_exchange_strong(read_count, read_count - 1, std::memory_order_release)) {
-      read_count = 0;
+      read_count = read_count - 1;
       break;
     }
   }

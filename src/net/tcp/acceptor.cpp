@@ -8,7 +8,7 @@
 lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddress& address)
     : eventloop_(eventloop),
       server_address_(address),
-      socket_channel_(std::make_shared<SocketChannel>(Socket::Create(address.Family(), true))) {
+      socket_channel_(std::make_shared<SocketChannel>(Socket::Create(address.Family(), false))) {
   LOG_TRACE("Initializing Acceptor...");
   socket_channel_->SetExecutor(eventloop_);
   socket_channel_->SetSelector(eventloop_->GetSelector());
@@ -28,7 +28,6 @@ lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddre
       if (acceptor_callback_) {
         acceptor_callback_(std::move(socket));
       }
-      break;
     }
   });
 }
@@ -37,7 +36,6 @@ std::string lizlib::Acceptor::String() const {
 }
 void lizlib::Acceptor::Listen() {
   // clang-format off
-  std::cout.flush();
   eventloop_->AddChannel(socket_channel_,
     [this] { socket_channel_->Listen(); },
     SelectEvents::kReadEvent);

@@ -76,8 +76,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   std::atomic<TcpState> state_{TcpState::kConnecting};
 
-  Buffer output_;
-  Buffer input_;
+  Buffer output_{1 << 14, true};
+  Buffer input_{1 << 14, true};
 
   SocketChannel::Ptr channel_;
   ChannelHandler::Ptr handler_;

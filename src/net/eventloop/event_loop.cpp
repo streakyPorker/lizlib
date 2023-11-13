@@ -51,11 +51,11 @@ void lizlib::EventLoop::RemoveChannel(const lizlib::Channel::Ptr& channel,
     }
   }
 }
-void lizlib::EventLoop::AddChannel(lizlib::Channel::Ptr channel, const lizlib::Callback& cb,
+void lizlib::EventLoop::AddChannel(const lizlib::Channel::Ptr& channel, const lizlib::Callback& cb,
                                    const SelectEvents& mode) {
 
   if (current() != this) {
-    Submit([=]() mutable { AddChannel(std::move(channel), cb, mode); });
+    Submit([=]() mutable { AddChannel(channel, cb, mode); });
   } else {
     LOG_TRACE("EventLoop::AddChannel({})", *channel);
     GetSelector()->Add(channel, mode);
@@ -80,4 +80,31 @@ lizlib::Selector* lizlib::EventLoop::GetSelector() noexcept {
 }
 lizlib::EventScheduler::Ptr lizlib::EventLoop::getScheduler() {
   return scheduler_;
+}
+void lizlib::EventLoop::loop() {
+  pthread_setname_np(pthread_self(), "worker");
+  current() = this;
+
+  while (!cancel_signal_.load(std::memory_order_relaxed)) {
+    std::shared_ptr<Callback> work;
+    if (lfq_.Empty() || (work = lfq_.Pop()) == nullptr) {
+      loop_cv_.Wait();
+      continue;
+    }
+    ASSERT_FATAL(work != nullptr, "invalid work value");
+    (*work)();
+  }
+}
+void lizlib::EventLoop::join() {
+  if (!cancel_signal_.load(std::memory_order_relaxed)) {
+    cancel_signal_.store(true, std::memory_order_release);
+    loop_cv_.NotifyAll(false);
+    if (thread_.joinable()) {
+      thread_.join();
+    }
+
+    // remove time channel
+
+    // scheduler_ and lfq_ will ~ after dtor
+  }
 }

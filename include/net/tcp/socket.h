@@ -19,8 +19,8 @@ namespace lizlib {
 class Socket : public File {
  public:
   Socket() : Socket(-1) {}
-  LIZ_DISABLE_COPY(Socket);
-  Socket(Socket&& other) noexcept : File(std::forward<File>(other)) {}
+  //  LIZ_DISABLE_COPY(Socket);
+  Socket(Socket&& other) noexcept : File(std::move(other)) {}
   Socket& operator=(Socket&& other) noexcept;
 
   static Socket Create(int domain, bool nonblock, int protocol = IPPROTO_TCP);
@@ -67,7 +67,7 @@ class Socket : public File {
 
   void Shutdown(bool close_read);
 
-  [[nodiscard]] std::string String() const override { return fmt::format("[Socket{}]", fd_); }
+  [[nodiscard]] std::string String() const override { return fmt::format("[Socket-{}]", fd_); }
 
  private:
   explicit Socket(int fd) : File(fd) {}

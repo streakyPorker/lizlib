@@ -53,7 +53,7 @@ class EventLoop : public Executor {
    * @param cb
    * @param mode
    */
-  void AddChannel(Channel::Ptr channel, const lizlib::Callback& cb,
+  void AddChannel(const Channel::Ptr& channel, const lizlib::Callback& cb,
                   const SelectEvents& mode = SelectEvents::kNoneEvent);
 
   void RemoveChannel(const Channel::Ptr& channel, const Callback& cb, bool unbind_executor = true);
@@ -68,32 +68,9 @@ class EventLoop : public Executor {
 
   EventScheduler::Ptr getScheduler();
 
-  void loop() {
-    current() = this;
-    while (!cancel_signal_.load(std::memory_order_relaxed)) {
-      std::shared_ptr<Callback> work;
-      if (lfq_.Empty() || (work = lfq_.Pop()) == nullptr) {
-        loop_cv_.Wait();
-        continue;
-      }
-      ASSERT_FATAL(work != nullptr, "invalid work value");
-      (*work)();
-    }
-  }
+  void loop();
 
-  void join() {
-    if (!cancel_signal_.load(std::memory_order_relaxed)) {
-      cancel_signal_.store(true, std::memory_order_release);
-      loop_cv_.NotifyAll(false);
-      if (thread_.joinable()) {
-        thread_.join();
-      }
-
-      // remove time channel
-
-      // scheduler_ and lfq_ will ~ after dtor
-    }
-  };
+  void join();
 
   EventScheduler::Ptr scheduler_;
   LockFreeQueue<Callback> lfq_;

@@ -20,7 +20,7 @@ void lizlib::EpollSelector::Remove(const Channel::Ptr& channel) {
   internalUpdate(channel.get(), EPOLL_CTL_DEL, SelectEvents::kNoneEvent);
 }
 void lizlib::EpollSelector::Update(const Channel::Ptr& channel, lizlib::SelectEvents events) {
-  if (register_map_.Contains(channel)) {
+  if (!register_map_.Contains(channel)) {
     LOG_FATAL("updating a non-existing fd");
   }
   register_map_.Put(channel, events.Value());

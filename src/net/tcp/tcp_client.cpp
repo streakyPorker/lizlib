@@ -50,13 +50,14 @@ void lizlib::TcpClient::Start() {
     return;
   }
 
-  Socket client_socket = Socket::Create(dest_address_.Family(), true);
+  Socket client_socket = Socket::Create(dest_address_.Family(), false);
   client_socket.ApplySettingOption();
   tryConnect(std::move(client_socket));
+  LOG_TRACE("TcpClient::Start() end...");
 }
 
-void lizlib::TcpClient::tryConnect(Socket client_socket) {
-
+lizlib::Status lizlib::TcpClient::tryConnect(Socket client_socket) {
+  LOG_TRACE("try connecting to {}", client_socket);
   Status status = client_socket.Connect(dest_address_);
   switch (status.Code()) {
     case 0:
@@ -66,21 +67,25 @@ void lizlib::TcpClient::tryConnect(Socket client_socket) {
       auto desired = TcpClientState::kConnecting;
       if (!state_.compare_exchange_strong(desired, TcpClientState::kConnected,
                                           std::memory_order_acq_rel)) {
-        return;
+        return status;
       }
       conn_ = std::make_shared<TcpConnection>(worker_group_->Next(), std::move(client_socket));
       conn_->SetHandler(internal_handler_);
       conn_->Start();
-      return;
+      return status;
     }
     case EAGAIN:
     case EADDRNOTAVAIL:
     case ECONNREFUSED:
     case ENETUNREACH:
-      //      retry(std::move(client_socket), err);
-      worker_group_->SubmitAfter([this, &client_socket]() { tryConnect(std::move(client_socket)); },
-                                 Duration::FromMilliSecs(kTcpRetryConnectDelayMs));
-      return;
+      LOG_TRACE("need to retry connection to {}",client_socket);
+      worker_group_->SubmitAfter(
+        [this, &client_socket]() mutable {
+          LOG_TRACE("connect op retrying");
+          tryConnect(std::move(client_socket));
+        },
+        Duration::FromMilliSecs(kTcpRetryConnectDelayMs));
+      return status;
 
     case EACCES:
     case EADDRINUSE:
@@ -96,6 +101,7 @@ void lizlib::TcpClient::tryConnect(Socket client_socket) {
       LOG_ERROR("unexpected connection error: {}", status);
       break;
   }
+  return status;
 }
 void lizlib::TcpClient::Close() {
   auto desired = TcpClientState::kConnected;

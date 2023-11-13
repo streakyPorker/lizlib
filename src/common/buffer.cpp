@@ -10,7 +10,6 @@ void lizlib::Buffer::Reset() {
   r_idx_ = w_idx_ = 0;
 }
 lizlib::Buffer::~Buffer() {
-
   if (deleter_ && data_) {
     LOG_TRACE("buf data({}byte) freed", length_)
     deleter_(static_cast<char*>(data_));

@@ -10,6 +10,7 @@
 namespace lizlib {
 class CountdownLatch final {
  public:
+  LIZ_DISABLE_COPY_AND_MOVE(CountdownLatch);
   explicit CountdownLatch(int counts) : count_(counts), cv_() {}
 
   [[nodiscard]] size_t Count() const noexcept { return count_.load(std::memory_order_acquire); }

@@ -37,16 +37,18 @@ class TcpClient {
   void ForceClose();
   void ForceShutdown();
 
-  void Send(const std::string& message) { conn_->Send(message); };
+  void Send(const std::string& message) {
+    conn_->Send(message);
+  };
   void Send(Buffer* message) { conn_->Send(message); };
 
  private:
-  void tryConnect(Socket client_socket);
+  Status tryConnect(Socket client_socket);
 
   ChannelHandler::Ptr generateInternalHandler(const ChannelHandler::Ptr& custom_handler);
 
   EventLoopGroup::Ptr worker_group_;
-  TcpConnection::Ptr conn_;
+  TcpConnection::Ptr conn_{nullptr};
   InetAddress dest_address_;
 
   ChannelHandler::Ptr internal_handler_{nullptr};

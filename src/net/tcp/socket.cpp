@@ -11,7 +11,6 @@ lizlib::Socket& lizlib::Socket::operator=(lizlib::Socket&& other) noexcept {
   if (this == &other) {
     return *this;
   }
-  File::Close();
   std::swap(fd_, other.fd_);
   return *this;
 }
@@ -51,7 +50,6 @@ lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote, lizlib::Socke
   socklen_t len = sizeof(sockaddr);
   Socket gen = Socket{::accept4(fd_, remote->Data(), &len, 0)};
   if (!gen.Valid()) {
-    LOG_ERROR("Socket {} failed to accept", fd_);
     return Status::FromErr();
   }
   if (len == sizeof(sockaddr_in)) {
@@ -67,7 +65,6 @@ lizlib::Status lizlib::Socket::Accept(lizlib::InetAddress* remote, lizlib::Socke
   return Status::Success();
 }
 lizlib::Status lizlib::Socket::Connect(const lizlib::InetAddress& address) {
-
   if (::connect(fd_, address.Data(), address.Length()) < 0) {
     return Status::FromErr();
   }
@@ -84,9 +81,10 @@ lizlib::InetAddress lizlib::Socket::GetLocalAddress() const {
 }
 lizlib::InetAddress lizlib::Socket::GetPeerAddress() const {
   InetAddress ret{};
+  ret.ipv6_enabled_ = IsIpv6();
   socklen_t len = ret.Length();
   if (::getpeername(fd_, ret.Data(), &len) < 0) {
-    LOG_FATAL("{} can't get peer address", fd_);
+    LOG_FATAL("{} can't get peer address, reason : {}", *this, Status::FromErr());
   }
   return ret;
 }

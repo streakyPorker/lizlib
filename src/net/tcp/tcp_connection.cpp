@@ -3,9 +3,12 @@
 //
 
 #include "net/tcp/tcp_connection.h"
+#include "concurrent/countdown_latch.h"
 void lizlib::TcpConnection::Start() {
   context_->SetConnection(this);
-  channel_->SetReadCallback([this](auto events, auto now) { handleRead(now); });
+  channel_->SetReadCallback([this](auto events, auto now) {
+    handleRead(now);
+  });
   channel_->SetWriteCallback([this](auto events, auto now) { handleWrite(); });
   channel_->SetCloseCallback([this](auto events, auto now) { handleClose(); });
   channel_->SetErrorCallback([this](auto events, auto now) { handleError(channel_->GetError()); });
@@ -17,18 +20,21 @@ void lizlib::TcpConnection::Start() {
   /*
    * run OnConnect first, then enable handling requests
    */
-  loop_->AddChannel(channel_, [self = shared_from_this()] {
+  CountdownLatch latch{1};
+  loop_->AddChannel(channel_, [self = shared_from_this(), &latch] {
     LOG_INFO("handleConnection {}", *self);
     TcpState desired = TcpState::kConnecting;
-
-    if (self->state_.compare_exchange_strong(desired, TcpState::kConnected,
+    if (!self->state_.compare_exchange_strong(desired, TcpState::kConnected,
                                              std::memory_order_acq_rel)) {
+      latch.CountDown();
       // already connected
       return;
     }
     self->handler_->OnConnect(self->GetChannelContext(), Timestamp::Now());
     self->channel_->SetReadable(true);
+    latch.CountDown();
   });
+  latch.Await();
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
   ssize_t n = input_.Append(&channel_->GetFile());
@@ -127,6 +133,7 @@ void lizlib::TcpConnection::ForceShutdown() {
   });
 }
 void lizlib::TcpConnection::ForceClose() {
+  LOG_TRACE("force close : {}", *this);
   if (state_ == TcpState::kDisconnected) {
     return;
   }
@@ -194,4 +201,5 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer) {
     ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
     channel_->SetWritable(true);
   }
+  channel_->SetWritable(true);
 }
