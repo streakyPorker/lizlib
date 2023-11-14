@@ -14,7 +14,7 @@ TEST(BasicTest, basicTest1) {
 TEST(BasicTest, logTest) {
   LOG_INFO("{} {} {} {} {}", "testing", 2, 3, 4, 5);
   ASSERT_TRACE(false, "{}", 1123);
-  ASSERT_TRACE(false, "{} {}", kTcpOption.reuse_port, kTcpOption.reuse_addr);
+  ASSERT_TRACE(false, "{} {}", config::kTcpOption.reuse_port, config::kTcpOption.reuse_addr);
 }
 
 TEST(BasicTest, stackAllocTest) {
@@ -25,16 +25,15 @@ TEST(BasicTest, stackAllocTest) {
   LIZ_ESCAPABLE_MEM(intptr2, 100000);
 }
 
-
 TEST(BasicTest, ctsTest) {
   ConcurrentTimestamp cts{Timestamp::Now()};
   using namespace std::chrono_literals;
-  fmt::println("{}",cts);
+  fmt::println("{}", cts);
   cts.Incr(1min);
-  fmt::println("{} {}",cts,Timestamp::Now());
-  fmt::println("{}",Rdtsc());
-  fmt::println("{}",Rdtsc());
-  fmt::println("{}",Rdtsc());
+  fmt::println("{} {}", cts, Timestamp::Now());
+  fmt::println("{}", Rdtsc());
+  fmt::println("{}", Rdtsc());
+  fmt::println("{}", Rdtsc());
 }
 using namespace std::chrono_literals;
 struct A {
@@ -53,4 +52,13 @@ struct B {
 };
 TEST(BasicTest, ctorCallTest) {
   B b;
+}
+
+TEST(BasicTest, lcTest) {
+  using namespace std;
+  auto cmp = [](const pair<int, int>& a, const pair<int, int>& b) {
+    return a.second > b.second;  // 最大堆排序
+  };
+  priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> queue(cmp);
+  queue.top()
 }

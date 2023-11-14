@@ -42,10 +42,10 @@ class Socket : public File {
   void SetTcpNoDelay(bool on);
 
   void ApplySettingOption() {
-    SetReuseAddr(kTcpOption.reuse_addr);
-    SetReusePort(kTcpOption.reuse_port);
-    SetKeepAlive(kTcpOption.keep_alive);
-    SetTcpNoDelay(kTcpOption.tcp_no_delay);
+    SetReuseAddr(config::kTcpOption.reuse_addr);
+    SetReusePort(config::kTcpOption.reuse_port);
+    SetKeepAlive(config::kTcpOption.keep_alive);
+    SetTcpNoDelay(config::kTcpOption.tcp_no_delay);
   }
 
   [[nodiscard]] bool IsIpv6() const {

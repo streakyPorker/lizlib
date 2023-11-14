@@ -27,7 +27,10 @@ class Acceptor {
 
   ~Acceptor() { Close(); }
 
-  void Bind() { socket_channel_->Bind(server_address_); }
+  void Bind() {
+    Status rst = socket_channel_->Bind(server_address_);
+    ASSERT_FATAL(rst.OK(), "bind failed, reason:{}", rst);
+  }
 
   void OnAccept(AcceptorCallback acceptor_callback) {
     acceptor_callback_ = std::move(acceptor_callback);

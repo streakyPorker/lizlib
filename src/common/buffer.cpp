@@ -56,9 +56,13 @@ ssize_t lizlib::Buffer::Append(const void* data, size_t size, bool capped, bool 
   w_idx_ += size;
   return size;
 }
-ssize_t lizlib::Buffer::Append(const File* file, ssize_t read_bytes, bool capped,
+ssize_t lizlib::Buffer::Append(const File& file, ssize_t read_bytes, bool capped,
                                bool drop_read_bytes) {
-  ssize_t read_size = std::min(read_bytes, file->Size());
+  ssize_t file_size = file.Size();
+  ssize_t read_size = read_bytes;
+  if (file_size > 0) {
+    read_size = std::min(read_bytes, file_size);
+  }
   ssize_t ret;
   ifUnlikely(!ensureWritable(read_size, capped, drop_read_bytes)) {
     return -1;
@@ -67,7 +71,7 @@ ssize_t lizlib::Buffer::Append(const File* file, ssize_t read_bytes, bool capped
   ssize_t page_remain = next_page - WPtr();
   // fits the remain page
   if (read_size <= page_remain) {
-    ret = file->Read(WPtr(), read_size);
+    ret = file.Read(WPtr(), read_size);
     ifLikely(ret >= 0) {
       w_idx_ += ret;
     }
@@ -89,7 +93,7 @@ ssize_t lizlib::Buffer::Append(const File* file, ssize_t read_bytes, bool capped
       slices[i + 1].Length(config::kFileRWUnit);
     }
   }
-  ret = file->Readv(slices, splits + 1);
+  ret = file.Readv(slices, splits + 1);
   ifLikely(ret > 0) {
     w_idx_ += ret;
   }

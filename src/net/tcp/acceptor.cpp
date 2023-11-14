@@ -38,7 +38,7 @@ void lizlib::Acceptor::Listen() {
   // clang-format off
   eventloop_->AddChannel(socket_channel_,
     [this] { socket_channel_->Listen(); },
-    SelectEvents::kReadEvent);
+    SelectEvents::kReadEvent.EdgeTrigger());
   // clang-format on
 }
 void lizlib::Acceptor::Close() {

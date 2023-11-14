@@ -76,6 +76,11 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   void handleWrite();
   void handleClose();
   void handleRemove();
+  /**
+   * blocking method to add it to the buffer
+   * @param buffer
+   * @param flush
+   */
   void handleSend(std::string_view buffer,bool flush);
 
   std::atomic<TcpState> state_{TcpState::kConnecting};

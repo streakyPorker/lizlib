@@ -58,7 +58,7 @@ class File {
 
   [[nodiscard]] ssize_t Cur() const { return Seek(0, SEEK_CUR); }
 
-  ssize_t Seek(uint64_t offset, SeekMode mode) const;
+  ssize_t Seek(ssize_t offset, SeekMode mode) const;
 
   ssize_t Truncate(ssize_t new_size);
 

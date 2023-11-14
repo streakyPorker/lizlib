@@ -50,11 +50,17 @@ TEST(TcpTest, server_test_1) {
 
   TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(2500ms);
 
   TcpClient client{server_addr, worker, std::make_shared<TestServerHandler>()};
   client.Start();
+
   client.Send("asdrrr");
   client.Send("asdrrr");
-  std::this_thread::sleep_for(30s);
+  client.Send("asdrrr");
+  for (int i = 0; i < 100; i++) {
+    client.Send(fmt::format("asdrrr[{}]", i));
+    std::this_thread::sleep_for(1s);
+  }
+  std::this_thread::sleep_for(300h);
 }

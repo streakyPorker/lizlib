@@ -35,7 +35,7 @@ void lizlib::TcpConnection::Start() {
   latch.Await();
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
-  ssize_t n = input_.Append(&channel_->GetFile());
+  ssize_t n = input_.Append(channel_->GetFile(), config::kTcpRwUnit);
   if (n < 0) {
     auto err = Status::FromErr();
     if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
@@ -54,6 +54,7 @@ void lizlib::TcpConnection::handleError(lizlib::Status err) {
   handler_->OnError(GetChannelContext(), Timestamp::Now(), err);
 }
 void lizlib::TcpConnection::handleWrite() {
+  LOG_TRACE("handling write");
   if (!channel_->Writable()) {
     LOG_FATAL("Not allowed to write to channel[{}]", channel_->GetFile());
   }
@@ -141,41 +142,40 @@ void lizlib::TcpConnection::ForceClose() {
 void lizlib::TcpConnection::Send(lizlib::Buffer* buf, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
     if (buf == &output_) {
-      if (output_.ReadableBytes()) {
+      if (output_.ReadableBytes() != 0) {
         channel_->SetWritable(true);
-        handleWrite();
         //        buf->Reset();
       }
       return;
     }
-    handleSend({buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())});
+    handleSend({buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())}, flush);
     buf->Reset();
     return;
   }
   loop_->Submit([self = shared_from_this(),
-                 clone = std::string_view{buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())}] {
-    self->handleSend(clone);
-  });
+                 clone = std::string_view{buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())},
+                 flush] { self->handleSend(clone, flush); });
 }
 void lizlib::TcpConnection::Send(const std::string& buffer, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
-    handleSend(buffer);
+    handleSend(buffer, flush);
     return;
   }
   LOG_TRACE("need to distribute write");
-  loop_->Submit(
-    [self = shared_from_this(), clone = std::string_view(buffer)] { self->handleSend(clone); });
+  loop_->Submit([self = shared_from_this(), clone = std::string_view(buffer), flush] {
+    self->handleSend(clone, flush);
+  });
 }
 
 void lizlib::TcpConnection::Send(std::string_view buffer, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
-    handleSend(buffer);
+    handleSend(buffer, flush);
     return;
   }
   // shallow copy here sine string_view itself is a non-owning object
-  loop_->Submit([self = shared_from_this(), &buffer] { self->handleSend(buffer); });
+  loop_->Submit([self = shared_from_this(), buffer, flush] { self->handleSend(buffer, flush); });
 }
-void lizlib::TcpConnection::handleSend(std::string_view buffer,bool flush) {
+void lizlib::TcpConnection::handleSend(std::string_view buffer, bool flush) {
   if (state_.load(std::memory_order_relaxed) != TcpState::kConnected) {
     LOG_TRACE("{}::{}: give up sending buffer", *this, __func__)
     return;
@@ -184,20 +184,23 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer,bool flush) {
     return;
   }
 
-  if (output_.ReadableBytes() == 0) {
-    ssize_t writen_bytes = channel_->Write(buffer.data(), buffer.size());
-    if (writen_bytes < 0) {
-      auto err = Status::FromErr();
-      if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
-        handleError(err);
-      }
-    }
-    buffer = buffer.substr(std::max(0L, writen_bytes));
-  }
-
-  if (!buffer.empty()) {
-    ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
-    ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
-    channel_->SetWritable(true);
-  }
+  //  if (output_.ReadableBytes() == 0) {
+  //    ssize_t writen_bytes = channel_->Write(buffer.data(), buffer.size());
+  //    if (writen_bytes < 0) {
+  //      auto err = Status::FromErr();
+  //      if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
+  //        handleError(err);
+  //      }
+  //    }
+  //    buffer = buffer.substr(std::max(0L, writen_bytes));
+  //  }
+  //
+  //  if (!buffer.empty()) {
+  //    ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
+  //    ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
+  //    channel_->SetWritable(true);
+  //  }
+  ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
+  ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
+  channel_->SetWritable(true);  // trigger handleWrite
 }

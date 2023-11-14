@@ -39,8 +39,8 @@ TEST(BufferTest, buffertest1) {
 TEST(BufferTest, buffertest2) {
   char asd[100];
   fmt::println("{}", asd + 99 - asd);
-  fmt::println("{} {} {}", (void*)CeilPageAlignAddr(asd),
-               (void*)FloorPageAlignAddr(asd), (void*)asd);
+  fmt::println("{} {} {}", (void*)CeilPageAlignAddr(asd), (void*)FloorPageAlignAddr(asd),
+               (void*)asd);
 }
 
 TEST(BufferTest, bufferfiletwtest) {
@@ -55,7 +55,7 @@ TEST(BufferTest, bufferfiletwtest) {
     file.Write(adder.c_str(), adder.length());
     Buffer bufFile{}, bufBytes{};
     file.Seek(0, SEEK_SET);
-    bufFile.Append(&file);
+    bufFile.Append(file, config::kFileRWUnit);
     bufBytes.Append(adder.data(), adder.length());
     fmt::println("{}", bufFile);
     fmt::println("{}", bufBytes);
@@ -73,7 +73,7 @@ TEST(BufferTest, bufferfiletwtest) {
     }
     file.Seek(0, SEEK_SET);
     Buffer bufFile{};
-    bufFile.Append(&file);
+    bufFile.Append(file,4096);
     fmt::println("{}", bufFile);
     EXPECT_EQ(file.Size(), bufFile.ReadableBytes());
   }

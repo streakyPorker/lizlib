@@ -44,7 +44,7 @@ ssize_t lizlib::File::Writev(lizlib::Slice* buf, size_t n) {
   }
   return ::writev(fd_, blocks, n);
 }
-ssize_t lizlib::File::Seek(uint64_t offset, lizlib::File::SeekMode mode) const {
+ssize_t lizlib::File::Seek(ssize_t offset, lizlib::File::SeekMode mode) const {
   return static_cast<ssize_t>(::lseek64(fd_, offset, mode));
 }
 ssize_t lizlib::File::Size() const {
