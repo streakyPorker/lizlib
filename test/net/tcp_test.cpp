@@ -46,7 +46,7 @@ TEST(TcpTest, server_test_1) {
 
   InetAddress server_addr{"127.0.0.1", 6666, false};
   EventLoopGroup::Ptr boss = std::make_shared<EventLoopGroup>(1);
-  EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(2);
+  EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(5);
 
   TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();

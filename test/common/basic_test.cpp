@@ -55,10 +55,4 @@ TEST(BasicTest, ctorCallTest) {
 }
 
 TEST(BasicTest, lcTest) {
-  using namespace std;
-  auto cmp = [](const pair<int, int>& a, const pair<int, int>& b) {
-    return a.second > b.second;  // 最大堆排序
-  };
-  priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> queue(cmp);
-  queue.top()
 }

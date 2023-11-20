@@ -8,14 +8,16 @@ lizlib::File& lizlib::SocketChannel::GetFile() {
   return *this;
 }
 void lizlib::SocketChannel::HandleEvents(lizlib::ReceiveEvents events, lizlib::Timestamp now) {
-  LOG_TRACE("{} handling events : {}", *this, events.String());
+
   if (events.ContainsAny(ReceiveEvents::kReadable, ReceiveEvents::kPriorReadable,
                          ReceiveEvents::kReadHangUp) &&
       read_callback_ != nullptr) {
+    LOG_TRACE("{} handling read event", *this);
     read_callback_(events, now);
   }
 
   if (events.Contains(ReceiveEvents::kWritable) && write_callback_ != nullptr) {
+    LOG_TRACE("{} handling write event", *this);
     write_callback_(events, now);
   }
 

@@ -36,6 +36,7 @@ void lizlib::TcpConnection::Start() {
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
   ssize_t n = input_.Append(channel_->GetFile(), config::kTcpRwUnit);
+  LOG_TRACE("data read from {} : {} bytes", *channel_, n);
   if (n < 0) {
     auto err = Status::FromErr();
     if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
@@ -54,7 +55,6 @@ void lizlib::TcpConnection::handleError(lizlib::Status err) {
   handler_->OnError(GetChannelContext(), Timestamp::Now(), err);
 }
 void lizlib::TcpConnection::handleWrite() {
-  LOG_TRACE("handling write");
   if (!channel_->Writable()) {
     LOG_FATAL("Not allowed to write to channel[{}]", channel_->GetFile());
   }
@@ -65,6 +65,7 @@ void lizlib::TcpConnection::handleWrite() {
       return;
     }
     output_.Retrieve(n);
+    LOG_TRACE("{} write out {} bytes", *channel_, n);
   }
 
   if (output_.ReadableBytes() == 0) {
@@ -109,7 +110,7 @@ void lizlib::TcpConnection::Close() {
 void lizlib::TcpConnection::Shutdown(bool close_read) {
   auto desired = TcpState::kConnected;
   if (!state_.compare_exchange_strong(desired, TcpState::kDisconnecting)) {
-    LOG_WARN("Shutting down a connection while it's not connected won't help")
+    LOG_WARN("Shutting down a connection while it's not connected won't do anything")
     return;
   }
   loop_->Submit([this, close_read]() {
@@ -161,8 +162,9 @@ void lizlib::TcpConnection::Send(const std::string& buffer, bool flush) {
     handleSend(buffer, flush);
     return;
   }
-  LOG_TRACE("need to distribute write");
+
   loop_->Submit([self = shared_from_this(), clone = std::string_view(buffer), flush] {
+    LOG_TRACE("distributed write");
     self->handleSend(clone, flush);
   });
 }
