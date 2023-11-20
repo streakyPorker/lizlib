@@ -36,7 +36,6 @@ void lizlib::TcpConnection::Start() {
 }
 void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
   ssize_t n = input_.Append(channel_->GetFile(), config::kTcpRwUnit);
-  LOG_TRACE("data read from {} : {} bytes", *channel_, n);
   if (n < 0) {
     auto err = Status::FromErr();
     if (err.Code() != EWOULDBLOCK && err.Code() != EAGAIN) {
@@ -50,6 +49,7 @@ void lizlib::TcpConnection::handleRead(lizlib::Timestamp now) {
     return;
   }
   handler_->OnRead(GetChannelContext(), now, input_);
+  input_.Reset();
 }
 void lizlib::TcpConnection::handleError(lizlib::Status err) {
   handler_->OnError(GetChannelContext(), Timestamp::Now(), err);
@@ -166,6 +166,7 @@ void lizlib::TcpConnection::Send(const std::string& buffer, bool flush) {
   loop_->Submit([self = shared_from_this(), clone = std::string_view(buffer), flush] {
     LOG_TRACE("distributed write");
     self->handleSend(clone, flush);
+    LOG_TRACE("distributed write done");
   });
 }
 
@@ -185,7 +186,6 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer, bool flush) {
   if (buffer.empty()) {
     return;
   }
-
   //  if (output_.ReadableBytes() == 0) {
   //    ssize_t writen_bytes = channel_->Write(buffer.data(), buffer.size());
   //    if (writen_bytes < 0) {
@@ -204,5 +204,6 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer, bool flush) {
   //  }
   ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
   ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
+  LOG_TRACE("send {} bytes to {}", left_bytes, *channel_);
   channel_->SetWritable(true);  // trigger handleWrite
 }

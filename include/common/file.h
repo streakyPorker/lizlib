@@ -3,6 +3,7 @@
 #ifndef LIZLIB_FILE_H
 #define LIZLIB_FILE_H
 #include <fcntl.h>
+#include <sys/poll.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <fstream>
@@ -39,6 +40,18 @@ class File {
   Status Close() noexcept;
 
   inline ssize_t Read(void* buf, size_t size) const noexcept { return ::read(fd_, buf, size); }
+  inline ssize_t PollRead(void* buf, size_t size, const Duration duration) const noexcept {
+    struct pollfd poll_fd;
+    poll_fd.fd = fd_;
+    poll_fd.events = POLLIN;
+    int rst = ::poll(&poll_fd, 1, duration.MilliSec());
+    if (rst < 0) {
+      LOG_FATAL("file poll failed : {}", Status::FromErr());
+    } else if (rst == 0) {
+      return -1;
+    }
+    return ::read(fd_, buf, size);
+  }
 
   ssize_t Readv(const Slice* buf, size_t n) const;
 

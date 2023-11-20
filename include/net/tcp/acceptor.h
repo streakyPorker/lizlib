@@ -43,6 +43,12 @@ class Acceptor {
   [[nodiscard]] std::string String() const;
 
  private:
+  static SocketChannel::Ptr createServerChannel(const lizlib::InetAddress& address) {
+    Socket socket = Socket::Create(address.Family(), false);
+    socket.ApplySettingOption();
+    return std::make_shared<SocketChannel>(std::move(socket));
+  }
+
   AcceptorCallback acceptor_callback_;
   InetAddress server_address_;
   SocketChannel::Ptr socket_channel_;

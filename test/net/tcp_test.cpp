@@ -18,7 +18,7 @@ class TestServerHandler : public ChannelHandlerAdaptor {
   ~TestServerHandler() override = default;
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
-    fmt::println("got data:{}", data.c_str());
+    fmt::println("got data:{}, size:{}", data.c_str(), data.length());
   }
   void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
     LOG_TRACE("{}:{}->{} write complete", ctx->GetConnection()->GetSocketChannel()->GetFile(),
@@ -46,21 +46,20 @@ TEST(TcpTest, server_test_1) {
 
   InetAddress server_addr{"127.0.0.1", 6666, false};
   EventLoopGroup::Ptr boss = std::make_shared<EventLoopGroup>(1);
-  EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(5);
+
+  EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(2);
+  EventLoopGroup::Ptr client_worker = std::make_shared<EventLoopGroup>(2);
 
   TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();
   std::this_thread::sleep_for(2500ms);
 
-  TcpClient client{server_addr, worker, std::make_shared<TestServerHandler>()};
+  TcpClient client{server_addr, client_worker, std::make_shared<TestServerHandler>()};
   client.Start();
 
-  client.Send("asdrrr");
-  client.Send("asdrrr");
-  client.Send("asdrrr");
   for (int i = 0; i < 100; i++) {
-    client.Send(fmt::format("asdrrr[{}]", i));
-    std::this_thread::sleep_for(1s);
+    client.Send(fmt::format("header[{}]", i));
+    std::this_thread::sleep_for(2ms);
   }
   std::this_thread::sleep_for(300h);
 }

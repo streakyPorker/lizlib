@@ -39,9 +39,9 @@ void lizlib::SocketChannel::SetReadable(bool on) {
   }
   auto prev = events_;
   if (on) {
-    events_.Add(SelectEvents::kReadEvent);
+    events_.Add(SelectEvents::kReadEvent.EdgeTrigger());
   } else {
-    events_.Remove(SelectEvents::kReadEvent);
+    events_.Remove(SelectEvents::kReadEvent.EdgeTrigger());
   }
   if (prev != events_) {
     selector_->Update(shared_from_this(), events_);
@@ -53,9 +53,9 @@ void lizlib::SocketChannel::SetWritable(bool on) {
   }
   auto prev = events_;
   if (on) {
-    events_.Add(SelectEvents::kWriteEvent);
+    events_.Add(SelectEvents::kWriteEvent.EdgeTrigger());
   } else {
-    events_.Remove(SelectEvents::kWriteEvent);
+    events_.Remove(SelectEvents::kWriteEvent.EdgeTrigger());
   }
   if (prev != events_) {
     selector_->Update(shared_from_this(), events_);

@@ -8,7 +8,7 @@ namespace lizlib::config {
 
 struct TcpOption {
   bool reuse_addr = true;
-  bool reuse_port = false;
+  bool reuse_port = true;
   bool keep_alive = true;
   bool tcp_no_delay = true;
 };

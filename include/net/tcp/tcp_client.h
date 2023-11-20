@@ -38,10 +38,13 @@ class TcpClient {
   void ForceShutdown();
 
   void Send(const std::string& message) {
-    ASSERT_FATAL(conn_ != nullptr,"null conn");
+    ASSERT_FATAL(conn_ != nullptr, "null conn");
     conn_->Send(message);
   };
-  void Send(Buffer* message) { conn_->Send(message); };
+  void Send(Buffer* message) {
+    ASSERT_FATAL(conn_ != nullptr, "null conn");
+    conn_->Send(message);
+  };
 
  private:
   Status tryConnect(Socket client_socket);

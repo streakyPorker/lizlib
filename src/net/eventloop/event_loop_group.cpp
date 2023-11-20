@@ -30,7 +30,6 @@ lizlib::EventLoopGroup::EventLoopGroup(size_t loop_size)
       size_(loop_size),
       loops_(loop_size),
       next_(0) {
-
   for (int i = 0; i < size_; i++) {
     loops_[i] = std::move(std::make_shared<EventLoop>(timer_scheduler_));
   }

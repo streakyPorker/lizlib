@@ -8,7 +8,7 @@
 lizlib::Acceptor::Acceptor(lizlib::EventLoop* eventloop, const lizlib::InetAddress& address)
     : eventloop_(eventloop),
       server_address_(address),
-      socket_channel_(std::make_shared<SocketChannel>(Socket::Create(address.Family(), false))) {
+      socket_channel_(createServerChannel(address)) {
   LOG_TRACE("Initializing Acceptor...");
   socket_channel_->SetExecutor(eventloop_);
   socket_channel_->SetSelector(eventloop_->GetSelector());
