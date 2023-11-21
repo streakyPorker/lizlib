@@ -44,7 +44,7 @@ class Acceptor {
 
  private:
   static SocketChannel::Ptr createServerChannel(const lizlib::InetAddress& address) {
-    Socket socket = Socket::Create(address.Family(), false);
+    Socket socket = Socket::Create(address.Family(), true);
     socket.ApplySettingOption();
     return std::make_shared<SocketChannel>(std::move(socket));
   }

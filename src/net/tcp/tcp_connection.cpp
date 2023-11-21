@@ -157,16 +157,13 @@ void lizlib::TcpConnection::Send(lizlib::Buffer* buf, bool flush) {
                  clone = std::string_view{buf->RPtr(), static_cast<size_t>(buf->ReadableBytes())},
                  flush] { self->handleSend(clone, flush); });
 }
-void lizlib::TcpConnection::Send(const std::string& buffer, bool flush) {
+void lizlib::TcpConnection::Send(std::string buffer, bool flush) {
   if (EventLoop::CheckUnderLoop(loop_)) {
     handleSend(buffer, flush);
     return;
   }
-
-  loop_->Submit([self = shared_from_this(), clone = std::string_view(buffer), flush] {
-    LOG_TRACE("distributed write");
+  loop_->Submit([self = shared_from_this(), clone = std::move(buffer), flush]() mutable {
     self->handleSend(clone, flush);
-    LOG_TRACE("distributed write done");
   });
 }
 
@@ -204,6 +201,6 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer, bool flush) {
   //  }
   ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
   ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
-  LOG_TRACE("send {} bytes to {}", left_bytes, *channel_);
+//  LOG_TRACE("send {} bytes to {},content {}", left_bytes, *channel_, buffer);
   channel_->SetWritable(true);  // trigger handleWrite
 }

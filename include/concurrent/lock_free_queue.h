@@ -8,6 +8,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include "cond_var.h"
 namespace lizlib {
 
 template <typename Element>
@@ -26,9 +27,12 @@ class LockFreeQueue {
     }
   }
 
-  bool Empty() { return head_.load() == nullptr; }
+  bool Empty() {
+//    std::unique_lock<std::mutex> guard(*cv_.GetMutex());
+    return head_.load() == nullptr; }
 
   void Push(Element element, const std::function<void()>& on_empty) {
+//    std::unique_lock<std::mutex> guard(*cv_.GetMutex());
     Node* node = new Node{std::move(element)};
     while (true) {
       Node* tail_read = tail_.load();
@@ -52,6 +56,7 @@ class LockFreeQueue {
   }
 
   std::shared_ptr<Element> Pop() {
+//    std::unique_lock<std::mutex> guard(*cv_.GetMutex());
     while (true) {
       Node* tail_read = tail_.load();
       if (tail_read == nullptr) {
@@ -86,6 +91,7 @@ class LockFreeQueue {
   };
 
   AtomicNodePtr head_, tail_;
+  CondVar cv_;
 };
 
 }  // namespace lizlib

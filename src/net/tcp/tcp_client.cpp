@@ -50,7 +50,7 @@ void lizlib::TcpClient::Start() {
     return;
   }
 
-  Socket client_socket = Socket::Create(dest_address_.Family(), false);
+  Socket client_socket = Socket::Create(dest_address_.Family(), true);
   client_socket.ApplySettingOption();
   tryConnect(std::move(client_socket));
   LOG_TRACE("TcpClient::Start() end...");
@@ -79,14 +79,14 @@ lizlib::Status lizlib::TcpClient::tryConnect(Socket client_socket) {
     case ECONNREFUSED:
     case ENETUNREACH:
       LOG_TRACE("need to retry connection to {}, reason:{}", client_socket, status);
-      //      worker_group_->SubmitAfter(
-      //        [this, &client_socket]() mutable {
-      //          LOG_TRACE("connect op retrying");
-      //          Socket own_sock = std::move(client_socket);
-      //          tryConnect(std::move(own_sock));
-      //        },
-      //        Duration::FromMilliSecs(config::kTcpRetryConnectDelayMs));
-      return tryConnect(std::move(client_socket));
+      worker_group_->SubmitAfter(
+        [this, &client_socket]() mutable {
+          LOG_TRACE("connect op retrying");
+          Socket own_sock = std::move(client_socket);
+          tryConnect(std::move(own_sock));
+        },
+        Duration::FromMilliSecs(config::kTcpRetryConnectDelayMs));
+      return status;
 
     case EACCES:
     case EADDRINUSE:

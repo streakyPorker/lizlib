@@ -49,7 +49,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
   void Send(Buffer* buf, bool flush = true);
 
-  void Send(const std::string& buffer, bool flush = true);
+  void Send(std::string buffer, bool flush = true);
 
   void Send(std::string_view buffer, bool flush = true);
 

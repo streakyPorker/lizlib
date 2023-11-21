@@ -18,7 +18,8 @@ class TestServerHandler : public ChannelHandlerAdaptor {
   ~TestServerHandler() override = default;
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
-    fmt::println("got data:{}, size:{}", data.c_str(), data.length());
+    fmt::println("got data size:{}",  data.length());
+    std::cout.flush();
   }
   void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
     LOG_TRACE("{}:{}->{} write complete", ctx->GetConnection()->GetSocketChannel()->GetFile(),
@@ -48,7 +49,7 @@ TEST(TcpTest, server_test_1) {
   EventLoopGroup::Ptr boss = std::make_shared<EventLoopGroup>(1);
 
   EventLoopGroup::Ptr worker = std::make_shared<EventLoopGroup>(2);
-  EventLoopGroup::Ptr client_worker = std::make_shared<EventLoopGroup>(2);
+  EventLoopGroup::Ptr client_worker = std::make_shared<EventLoopGroup>(1);
 
   TcpServer server{server_addr, boss, worker, std::make_shared<TestServerHandler>()};
   server.Start();
@@ -57,9 +58,9 @@ TEST(TcpTest, server_test_1) {
   TcpClient client{server_addr, client_worker, std::make_shared<TestServerHandler>()};
   client.Start();
 
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 1000000; i++) {
     client.Send(fmt::format("header[{}]", i));
-    std::this_thread::sleep_for(2ms);
+//    std::this_thread::sleep_for(2ms);
   }
   std::this_thread::sleep_for(300h);
 }
