@@ -15,10 +15,13 @@ using namespace std::chrono_literals;
 
 class TestServerHandler : public ChannelHandlerAdaptor {
  public:
+  uint64_t total_bytes = 0;
+
   ~TestServerHandler() override = default;
   void OnRead(ChannelContext::Ptr ctx, Timestamp now, Buffer& buffer) override {
     std::string data(buffer.RPtr(), buffer.ReadableBytes());
-    fmt::println("got data size:{}",  data.length());
+    total_bytes += data.length();
+    fmt::println("got data size:{}, total data:{}", data.length(),total_bytes);
     std::cout.flush();
   }
   void OnWriteComplete(ChannelContext::Ptr ctx, Timestamp now) override {
@@ -59,8 +62,8 @@ TEST(TcpTest, server_test_1) {
   client.Start();
 
   for (int i = 0; i < 1000000; i++) {
-    client.Send(fmt::format("header[{}]", i));
-//    std::this_thread::sleep_for(2ms);
+    client.Send(fmt::format("header", i));
+    //    std::this_thread::sleep_for(2ms);
   }
   std::this_thread::sleep_for(300h);
 }
