@@ -29,10 +29,10 @@ TEST(File, fileWriteTest) {
     Timestamp now = Timestamp::Now();
     for (int i = 0; i < writeTotal / writeSize; i++) {
       fileWithEveryWriteSync.Write(data, writeSize);
-//      fileWithEveryWriteSync.Sync(kDataSync);
+      fileWithEveryWriteSync.Sync(kSync);
       LOG_INFO("{}KB written", (i + 1) * writeSize / 1024);
     }
-    fmt::println("fileWithEveryWriteSync cost {}ms, throughput:{}MB/ns", Timestamp::Now() - now,
-                 writeTotal * 1e6 / 1024/1024 / (Timestamp::Now() - now).usec_);
+    fmt::println("fileWithEveryWriteSync cost {}ms, throughput:{}kB/ns", Timestamp::Now() - now,
+                 writeTotal * 1e6 / 1024 / (Timestamp::Now() - now).usec_);
   }
 }
