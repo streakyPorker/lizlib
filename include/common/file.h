@@ -67,6 +67,19 @@ class File {
 
   ssize_t Pwritev(Slice* bufs, size_t n, uint64_t offset, int flags = 0);
 
+  /**
+   * 三种sync方式的区别：
+   *<br>● fsync 用于将指定文件描述符对应的文件的所有数据和元数据刷写到磁盘上。
+   * 它会确保文件系统元数据和文件数据的一致性，包括文件内容和文件的元信息（如修改时间、权限等）。
+   * 调用 fsync 时，可能会导致文件系统中与该文件相关的所有数据和元数据都被刷新到磁盘。
+    <br> ● fdatasync 与 fsync 类似，但它只刷新文件的数据部分，
+    而不刷新元数据。如果你只关心文件内容的持久性，而不需要同步元数据，
+    可以使用 fdatasync。fdatasync 的性能通常比 fsync 更好，因为它不需要刷新文件的所有元数据。
+     <br>● syncfs 用于将指定文件描述符对应的文件所在的文件系统中关于该文件的所有数据和元数据刷写到磁盘上。
+     与 fsync 不同，syncfs 是针对整个文件系统的，而不是特定的文件。调用 syncfs 时，
+     可能会导致文件系统中与该文件系统相关的所有数据和元数据都被刷新到磁盘。
+   * @return
+   */
   Status Sync() const noexcept;
 
   [[nodiscard]] ssize_t Cur() const { return Seek(0, SEEK_CUR); }
