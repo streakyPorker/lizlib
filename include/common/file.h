@@ -24,7 +24,7 @@ class File {
 
   // only move ctor allowed
   File(File&& file) noexcept : fd_(file.fd_), flags_(file.flags_) {
-    file.fd_ = -1;
+    file.fd_ = INVALID_FD;
     file.flags_ = 0;
   }
   explicit File(int fd) : fd_(fd){};
@@ -37,7 +37,7 @@ class File {
   static File From(int fd) { return File(fd); }
 
   [[nodiscard]] inline int Fd() const { return fd_; }
-  [[nodiscard]] inline bool Valid() const { return fd_ != -1; }
+  [[nodiscard]] inline bool Valid() const { return fd_ != INVALID_FD; }
   [[nodiscard]] inline bool Direct() const { return (flags_ & O_DIRECT) == 0; }
 
   Status Close() noexcept;
@@ -98,7 +98,8 @@ class File {
   [[nodiscard]] virtual std::string String() const { return fmt::format("{}", fd_); }
 
  protected:
-  int fd_{-1};
+  const static int INVALID_FD = -1;
+  int fd_{INVALID_FD};
   int flags_{0};
   File() = default;
 };

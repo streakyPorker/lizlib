@@ -19,7 +19,7 @@ add_library(lizlib SHARED ${SRC_FILES})
 add_definitions(-DFMT_HEADER_ONLY)
 # uring 必须要public
 
-target_link_libraries(lizlib PUBLIC fmt pthread uring)
+target_link_libraries(lizlib PUBLIC fmt pthread uring stdc++fs)
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR LIZLIB_BUILD_TESTS)

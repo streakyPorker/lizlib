@@ -1,12 +1,13 @@
 
 
 #include "common/file.h"
+#include <sys/stat.h>
 lizlib::Status lizlib::File::Close() noexcept {
   if (Valid()) {
     LOG_TRACE("File(fd:{})::Close()", fd_);
     auto rst = Status::FromRet(::close(fd_));
     if (rst.OK()) {
-      fd_ = -1;
+      fd_ = INVALID_FD;
     }
     return rst;
   }
@@ -91,6 +92,7 @@ ssize_t lizlib::File::Write(const void* buf, size_t size) noexcept {
 lizlib::Status lizlib::File::Remove(const char* name) {
   return Status::FromRet(::remove(name));
 }
+
 ssize_t lizlib::File::Truncate(ssize_t new_size) {
   return ::ftruncate64(fd_, new_size);
 }

@@ -2,6 +2,8 @@
 
 #ifndef LIZLIB_STATUS_H
 #define LIZLIB_STATUS_H
+#include <utility>
+
 #include "basic.h"
 namespace lizlib {
 /**
@@ -11,7 +13,7 @@ class Status {
  public:
   Status() = delete;
   Status(const Status&) = default;
-  explicit Status(int code) : code_(code) {}
+  explicit Status(int code, std::string reason = "") : code_(code), reason_(std::move(reason)) {}
 
   inline static Status Success() { return Status{0}; }
   /**
@@ -19,7 +21,7 @@ class Status {
    * @param ret
    * @return
    */
-  static Status FromRet(int ret) {
+  inline static Status FromRet(int ret) {
     if (ret == 0) {
       return Status::Success();
     } else {
@@ -27,19 +29,18 @@ class Status {
     }
   }
 
-  inline static Status FromErr() { return Status{errno}; }
+  inline static Status FromErr() { return Status{errno, getReason(errno)}; }
 
-  inline static Status Invalid() { return Status{INT32_MIN}; }
+  inline static Status Invalid(const std::string& desc = "") { return Status{INT32_MIN, desc}; }
 
-  inline bool OK() const { return code_ == 0; }
-  inline int32_t Code() const { return code_; }
-  [[nodiscard]] std::string String() const {
-    return fmt::format("Error[code:{}, reason:{}]", code_, getReason());
-  }
+  [[nodiscard]] inline bool OK() const { return code_ == 0; }
+  [[nodiscard]] inline int32_t Code() const { return code_; }
+  [[nodiscard]] std::string String() const;
 
  private:
-  [[nodiscard]] const char* getReason() const noexcept;
+  [[nodiscard]] static std::string getReason(int code) noexcept;
   int32_t code_{INT32_MIN};
+  std::string reason_{};
 };
 }  // namespace lizlib
 

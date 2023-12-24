@@ -1,6 +1,7 @@
 
 
 #include "common/file.h"
+#include <filesystem>
 #include "common/logger.h"
 #include "gtest/gtest.h"
 
@@ -13,8 +14,6 @@ TEST(File, fileOpenTest) {
 
 TEST(File, fileWriteTest) {
   File fileWithEveryWriteSync = File::Open("fileWithEveryWriteSync.txt", O_CREAT | O_RDWR);
-  File fileWithEverySecondSync = File::Open("fileWithEverySecondSync.txt", O_CREAT | O_RDWR);
-  File fileWithLastSync = File::Open("fileWithLastSync.txt", O_CREAT | O_RDWR);
 
   size_t writeSize = 10 * 1024;      // 10kB per write
   char* data = new char[writeSize];  // 10B data
@@ -35,4 +34,18 @@ TEST(File, fileWriteTest) {
     fmt::println("fileWithEveryWriteSync cost {}ms, throughput:{}kB/ns", Timestamp::Now() - now,
                  writeTotal * 1e6 / 1024 / (Timestamp::Now() - now).usec_);
   }
+}
+
+TEST(File, fileRemoveTest) {
+  File file = File::Open("testDelete.txt", O_CREAT | O_RDWR);
+  ASSERT_TRUE(File::Remove("testDelete.txt").OK());
+  ASSERT_TRUE(!std::filesystem::exists("testDelete.txt"));
+}
+
+TEST(File, fileTruncateTest) {
+  File file = File::Open("testTruncate.txt", O_CREAT | O_RDWR);
+  std::string data = "asdrrr\n";
+  file.Write(data.data(), data.size());
+  file.Truncate(1);
+  ASSERT_EQ(file.Size(), 1);
 }

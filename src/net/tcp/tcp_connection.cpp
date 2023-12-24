@@ -201,6 +201,6 @@ void lizlib::TcpConnection::handleSend(std::string_view buffer, bool flush) {
   //  }
   ssize_t left_bytes = output_.Append(buffer.data(), buffer.size(), false, false);
   ASSERT_FATAL(left_bytes == buffer.size(), "tcp output buffer full!");
-//  LOG_TRACE("send {} bytes to {},content {}", left_bytes, *channel_, buffer);
+  //  LOG_TRACE("send {} bytes to {},content {}", left_bytes, *channel_, buffer);
   channel_->SetWritable(true);  // trigger handleWrite
 }

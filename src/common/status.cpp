@@ -3,7 +3,10 @@
 //
 
 #include "common/status.h"
-const char* lizlib::Status::getReason() const noexcept {
+std::string lizlib::Status::getReason(int code) noexcept {
   thread_local char buf[1024];
-  return strerror_r(code_, buf, sizeof(buf));
+  return strerror_r(code, buf, sizeof(buf));
+}
+std::string lizlib::Status::String() const {
+  return fmt::format("Error[code:{}, reason:{}]", code_, reason_);
 }
