@@ -13,6 +13,9 @@
 #include "status.h"
 
 namespace lizlib {
+
+enum SyncMode { kSync, kDataSync, kSyncFs };
+
 class File {
  public:
   using SeekMode = int;
@@ -80,7 +83,7 @@ class File {
      可能会导致文件系统中与该文件系统相关的所有数据和元数据都被刷新到磁盘。
    * @return
    */
-  Status Sync() const noexcept;
+  Status Sync(const SyncMode& mode = kSync) const noexcept;
 
   [[nodiscard]] ssize_t Cur() const { return Seek(0, SEEK_CUR); }
 

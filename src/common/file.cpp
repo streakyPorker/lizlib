@@ -59,8 +59,15 @@ ssize_t lizlib::File::Size() const {
   }
   return size;
 }
-lizlib::Status lizlib::File::Sync() const noexcept {
-  return Status::FromRet(::fsync(fd_));
+lizlib::Status lizlib::File::Sync(const SyncMode& mode) const noexcept {
+  switch (mode) {
+    case kSync:
+      return Status::FromRet(::fsync(fd_));
+    case kDataSync:
+      return Status::FromRet(::fdatasync(fd_));
+    case kSyncFs:
+      return Status::FromRet(::syncfs(fd_));
+  }
 }
 ssize_t lizlib::File::Pread(void* buf, size_t n, uint64_t offset) const {
   return ::pread64(fd_, buf, n, offset);

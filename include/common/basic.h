@@ -79,6 +79,16 @@
 
 namespace lizlib {
 
+struct Defer final {
+  explicit Defer(std::function<void()> f) : f_(std::move(f)) {}
+  ~Defer() {
+    if (f_) {
+      f_();
+    }
+  }
+  std::function<void()> f_;
+};
+
 static uint64_t Rdtsc() {
   uint64_t rax;
   uint64_t rdx;
@@ -155,6 +165,10 @@ struct Duration : Comparable<Duration> {
   };
   [[nodiscard]] inline int64_t MicrosBelowSec() const noexcept {
     return Valid() ? usec_ % 1000000L : -1;
+  };
+
+  [[nodiscard]] std::string String() const noexcept {
+    return fmt::format("{}", usec_ * 1.0F / 1000);
   };
 
  private:
@@ -256,6 +270,7 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
 }  // namespace lizlib
 
 LIZ_FORMATTER_REGISTRY(lizlib::Timestamp);
+LIZ_FORMATTER_REGISTRY(lizlib::Duration);
 LIZ_FORMATTER_REGISTRY(lizlib::ConcurrentTimestamp);
 
 #endif  //LIZLIB_BASIC_H
