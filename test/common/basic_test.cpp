@@ -5,6 +5,11 @@
 #include "net/config.h"
 using namespace lizlib;
 
+TEST(BasicTest, asmTest){
+    using namespace std;
+    LOG_DEBUG("{}", Rdtsc());
+}
+
 TEST(BasicTest, basicTest1) {
   Timestamp ts = Timestamp::Now();
   std::cout << fmt::format("{}", ts) << std::endl;
