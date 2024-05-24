@@ -19,6 +19,14 @@
 #include <string>
 #include <thread>
 #include <utility>
+#if defined(__i386__) || defined(__x86_64__)
+#define USE_SSE
+#endif
+
+#ifdef USE_SSE
+#include <xmmintrin.h>
+#endif
+
 #include "config.h"
 
 #define LIZ_FORMATTER_REGISTRY(T)                                                       \
@@ -45,6 +53,7 @@
 #define LIZ_DISABLE_COPY_AND_MOVE(T) \
   LIZ_DISABLE_COPY(T);               \
   LIZ_DISABLE_MOVE(T)
+
 
 #define ValidFd(fd) ((fd) >= 0)
 
@@ -83,20 +92,17 @@
   }
 
 #define LIZ_CLAIM_SHARED_PTR(type) using Ptr = std::shared_ptr<type>
+#define STD_PTR std::shared_ptr
 #define LIZ_CLAIM_WEAK_PTR(type) using WeakPtr = std::weak_ptr<type>
+#define STD_WEAK_PTR std::weak_ptr
 #define LIZ_CLAIM_UNIQUE_PTR(type) using UniPtr = std::unique_ptr<type>
+#define STD_UPTR std::unique_ptr
+
+
 
 namespace lizlib {
 
-struct Defer final {
-  explicit Defer(std::function<void()> f) : f_(std::move(f)) {}
-  ~Defer() {
-    if (f_) {
-      f_();
-    }
-  }
-  std::function<void()> f_;
-};
+
 
 static uint64_t Rdtsc() {
 #if defined(__x86_64__) || defined(_M_X64)
@@ -113,6 +119,17 @@ static uint64_t Rdtsc() {
   exit(0);
 #endif
 }
+
+struct Defer final {
+  explicit Defer(std::function<void()> f) : f_(std::move(f)) {}
+  ~Defer() {
+    if (f_) {
+      f_();
+    }
+  }
+  std::function<void()> f_;
+};
+
 
 inline char* CeilPageAlignAddr(void* ptr) {
   return reinterpret_cast<char*>(((uint64_t)ptr + config::kPageSize) & (~(config::kPageSize - 1)));
@@ -294,6 +311,7 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };
+
 
 }  // namespace lizlib
 

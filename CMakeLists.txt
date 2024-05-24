@@ -22,7 +22,7 @@ add_definitions(-DFMT_HEADER_ONLY)
 target_link_libraries(lizlib PUBLIC fmt pthread uring stdc++fs)
 
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR LIZLIB_BUILD_TESTS)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND LIZLIB_BUILD_TESTS)
     option(LIZLIB_BUILD_TESTS "build tests" ON)
 else ()
     option(LIZLIB_BUILD_TESTS "build tests" OFF)
