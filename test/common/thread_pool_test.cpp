@@ -111,3 +111,7 @@ TEST(ThreadPoolTest, testDelay) {
   ThreadPool threadPool{4};
   threadPool.SubmitAfter([]() { fmt::println("here"); }, 1ms);
 }
+
+TEST(ThreadPoolTest, generalTest) {
+  std::cout <<"here" << std::endl;
+}
