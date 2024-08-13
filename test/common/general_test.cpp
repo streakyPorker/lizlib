@@ -10,11 +10,12 @@
 #include "gtest/gtest.h"
 using namespace lizlib;
 using namespace std;
-
+void funcCall() {}
 namespace general_test {
 template <int... Nums>
 struct CheckP {
-  static constexpr bool value = sizeof...(Nums);
+  static constexpr int value = sizeof...(Nums);
+  static conditional<value % 2 == 0, int, double> var;
   constexpr static bool isP() {
     std::array<int, sizeof...(Nums)> arr{Nums...};
     for (int i = 0; i <= arr.size() / 2; i++) {
@@ -28,6 +29,8 @@ struct CheckP {
 TEST(GeneralTest, useOfConstexpr) {
   using namespace std;
   static_assert(CheckP<1, 2, 3, 2, 1>::isP(), "msg 1");
+
+  cout << typeid(CheckP<1, 2>::var).name() << " " << typeid(CheckP<1, 2, 3>::var).name() << endl;
   //  static_assert(CheckP<1,2,3>::isP(),"msg 2");
 }
 
@@ -48,11 +51,6 @@ void prints(Args... args) {
 
 TEST(GeneralTest, varArgTest) {
   prints('a', 'b', 'c', 'd');
-}
-
-enum Enum : long long { A = 1, B, C, D };
-TEST(GeneralTest, enumTest) {
-  cout << sizeof(D) << endl;
 }
 
 TEST(GeneralTest, smartPtrTest) {
@@ -79,17 +77,71 @@ TEST(GeneralTest, smartPtrTest2) {
   shared_ptr<Obj> ptr(obj1);
   optional<int> opInt;
   opInt = 1;
-
 }
 
-template<typename T> concept Incrementable = requires(T x) {x++; ++x;};
+void func(int a, int b) {
+  cout << &a << " " << &b << endl;
+};
 TEST(GeneralTest, streamView) {
   //指定 default_delete 作为释放规则
-  vector<int> data {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  const std::string str{"123456098"};
-  int val = 10;
-  auto cpy = from_chars(str.data(), str.data()+4,val);
-  cout << cpy.ptr << endl;
+  func(1, 2);
+}
+
+struct A {
+  virtual void a1() {}
+  virtual void a2() {}
+  virtual ~A() {}
+};
+
+struct B {
+  virtual void b1() {}
+  virtual void b2() {}
+  virtual ~B() {}
+};
+
+class C : public A, public B {
+ public:
+  C() {}
+  virtual void a1() override {}
+  virtual void a2() override {}
+  virtual void b1() override {}
+  virtual void b2() override {}
+  virtual ~C() {}
+};
+
+// 用于获取虚函数表的辅助函数
+template<typename T>
+void* get_vtable(T*) {
+  static_assert(sizeof(T) == 0, "This is an invalid type");
+  return nullptr;
+}
+
+template<typename T>
+void* get_vtable(T& obj) {
+  return &obj + 1;
+}
+
+
+TEST(GeneralTest, testVirtual) {
+  C c;
+
+  void* vtable_c = get_vtable(c);
+
+  // 输出虚函数表的位置
+  std::cout << "Virtual Table of C: " << vtable_c << std::endl;
+
+  // 获取虚函数地址
+  void (*a1)(C*) = *reinterpret_cast<void (C::**)()>(vtable_c);
+  void (*a2)(C*) = *reinterpret_cast<void (C::**)()>(reinterpret_cast<char*>(vtable_c) + sizeof(void*));
+  void (*b1)(C*) = *reinterpret_cast<void (C::**)()>(reinterpret_cast<char*>(vtable_c) + 2 * sizeof(void*));
+  void (*b2)(C*) = *reinterpret_cast<void (C::**)()>(reinterpret_cast<char*>(vtable_c) + 3 * sizeof(void*));
+
+  // 输出虚函数地址
+  std::cout << "Address of a1 in C: " << a1 << std::endl;
+  std::cout << "Address of a2 in C: " << a2 << std::endl;
+  std::cout << "Address of b1 in C: " << b1 << std::endl;
+  std::cout << "Address of b2 in C: " << b2 << std::endl;
+
 }
 
 }  // namespace general_test

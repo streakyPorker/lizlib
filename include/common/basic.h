@@ -54,7 +54,6 @@
   LIZ_DISABLE_COPY(T);               \
   LIZ_DISABLE_MOVE(T)
 
-
 #define ValidFd(fd) ((fd) >= 0)
 
 #if defined(__cplusplus)
@@ -68,20 +67,22 @@
 #define NON_EXPLICIT
 
 #if defined(__x86_64__) || defined(_M_X64)
-    #define LIZ_PAUSE() asm volatile("pause")
-    #define LIZ_BARRIER() asm volatile("" ::: "memory")
-    #define LIZ_LFENSE() asm volatile("lfence" ::: "memory")
-    #define LIZ_SFENSE() asm volatile("sfence" ::: "memory")
-    #define LIZ_MFENSE() asm volatile("mfence" ::: "memory")
+#define LIZ_PAUSE() asm volatile("pause")
+#define LIZ_BARRIER() asm volatile("" ::: "memory")
+#define LIZ_LFENSE() asm volatile("lfence" ::: "memory")
+#define LIZ_SFENSE() asm volatile("sfence" ::: "memory")
+#define LIZ_MFENSE() asm volatile("mfence" ::: "memory")
 #else
-    #define LIZ_PAUSE() asm volatile("yield" ::: "memory")
-    #define LIZ_BARRIER() 
-    #define LIZ_LFENSE() 
-    #define LIZ_SFENSE() 
-    #define LIZ_MFENSE() 
+#define LIZ_PAUSE() asm volatile("yield" ::: "memory")
+#define LIZ_BARRIER()
+#define LIZ_LFENSE()
+#define LIZ_SFENSE()
+#define LIZ_MFENSE()
 #endif
 
-
+/**
+ * allocate memory that will be deleted when exiting the block
+ */
 #define LIZ_ESCAPABLE_MEM(ptr, size)                     \
   std::unique_ptr<char, MallocDeleter> __cleaner##ptr;   \
   if (size <= config::kStackAllocMaximum) { /*on stack*/ \
@@ -98,11 +99,7 @@
 #define LIZ_CLAIM_UNIQUE_PTR(type) using UniPtr = std::unique_ptr<type>
 #define STD_UPTR std::unique_ptr
 
-
-
 namespace lizlib {
-
-
 
 static uint64_t Rdtsc() {
 #if defined(__x86_64__) || defined(_M_X64)
@@ -111,10 +108,10 @@ static uint64_t Rdtsc() {
   asm volatile("rdtsc" : "=a"(rax), "=d"(rdx));
   return (rdx << 32) | rax;
 #elif defined(__aarch64__) || defined(__arm64__)
-      uint64_t value;
-    // ARMv8-A中的MRS指令用于从系统寄存器读取到通用寄存器
-    asm volatile("mrs %0, cntvct_el0" : "=r"(value));
-    return value;
+  uint64_t value;
+  // ARMv8-A中的MRS指令用于从系统寄存器读取到通用寄存器
+  asm volatile("mrs %0, cntvct_el0" : "=r"(value));
+  return value;
 #else
   exit(0);
 #endif
@@ -129,7 +126,6 @@ struct Defer final {
   }
   std::function<void()> f_;
 };
-
 
 inline char* CeilPageAlignAddr(void* ptr) {
   return reinterpret_cast<char*>(((uint64_t)ptr + config::kPageSize) & (~(config::kPageSize - 1)));
@@ -146,15 +142,13 @@ struct DummyDeleter {
   void operator()(void* ptr) {}
 };
 template <typename T>
-struct StdDeleter{
-    void operator()(T* ptr) { delete ptr; }
+struct StdDeleter {
+  void operator()(T* ptr) { delete ptr; }
 };
 template <typename T>
-struct StdArrayDeleter{
-    void operator()(T* ptr) { delete[] ptr; }
+struct StdArrayDeleter {
+  void operator()(T* ptr) { delete[] ptr; }
 };
-
-
 
 template <typename T>
 struct Comparable {
@@ -311,7 +305,6 @@ struct ConcurrentTimestamp : public Comparable<ConcurrentTimestamp> {
     return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:06}", fmt::localtime(msecs), tmp_usec);
   };
 };
-
 
 }  // namespace lizlib
 

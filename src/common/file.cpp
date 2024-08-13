@@ -63,6 +63,7 @@ ssize_t lizlib::File::Size() const {
 lizlib::Status lizlib::File::Sync(const SyncMode& mode) const noexcept {
   switch (mode) {
     case kSync:
+    default:
       return Status::FromRet(::fsync(fd_));
     case kDataSync:
       return Status::FromRet(::fdatasync(fd_));

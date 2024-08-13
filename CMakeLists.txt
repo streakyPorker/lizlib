@@ -17,7 +17,7 @@ include_directories(include)
 file(GLOB_RECURSE SRC_FILES src/*.cc src/*.cpp include/*.h)
 add_library(lizlib SHARED ${SRC_FILES})
 add_definitions(-DFMT_HEADER_ONLY)
-# uring 必须要public
+
 
 target_link_libraries(lizlib PUBLIC fmt pthread uring stdc++fs)
 
